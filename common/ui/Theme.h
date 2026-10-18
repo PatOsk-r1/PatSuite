@@ -24,6 +24,8 @@ inline const juce::Colour violet{0xffa060ff};
 inline const juce::Colour gold{0xffffd166};
 inline const juce::Colour orange{0xffff8a3d};
 inline const juce::Colour ice{0xff5cc8ff};
+inline const juce::Colour coral{0xffff5e7e};
+inline const juce::Colour mint{0xff3dffc8};
 inline const juce::Colour hot{0xffff4d6d};  // clipping / over threshold
 }  // namespace colours
 
