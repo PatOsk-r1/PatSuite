@@ -9,7 +9,11 @@
   #define Projects "..\.."
 #endif
 
-#define PluginDir(Name) Projects + "\" + Name + "\build\dist\" + Name + "_artefacts\Release"
+; Stand-alone projects (PatWave, PatVerb) live in sibling folders; the vocal suite plugins are
+; built inside PatSuite itself (build\dist\plugins\<Name>).
+#define SiblingDir(Name) Projects + "\" + Name + "\build\dist\" + Name + "_artefacts\Release"
+#define SuiteDir(Name) Projects + "\PatSuite\build\dist\plugins\" + Name + "\" + Name + "_artefacts\Release"
+#define PluginDir(Name) DirExists(SiblingDir(Name)) ? SiblingDir(Name) : SuiteDir(Name)
 #define HasPlugin(Name) FileExists(PluginDir(Name) + "\VST3\" + Name + ".vst3\Contents\x86_64-win\" + Name + ".vst3")
 
 [Setup]
@@ -51,14 +55,14 @@ Name: "patwave"; Description: "PatWave - wavetable synth"; Types: full custom
 #if HasPlugin("PatVerb")
 Name: "patverb"; Description: "PatVerb - visual reverb"; Types: full custom
 #endif
-#if HasPlugin("PatDeEss")
-Name: "patdeess"; Description: "PatDeEss - de-esser"; Types: full custom
+#if HasPlugin("PatDeEsser")
+Name: "patdeesser"; Description: "PatDeEsser - de-esser"; Types: full custom
 #endif
-#if HasPlugin("PatPump")
-Name: "patpump"; Description: "PatPump - sidechain / ducking"; Types: full custom
+#if HasPlugin("PatSidechain")
+Name: "patsidechain"; Description: "PatSidechain - sidechain / ducking"; Types: full custom
 #endif
-#if HasPlugin("PatDouble")
-Name: "patdouble"; Description: "PatDouble - vocal doubler"; Types: full custom
+#if HasPlugin("PatDoubler")
+Name: "patdoubler"; Description: "PatDoubler - vocal doubler"; Types: full custom
 #endif
 #if HasPlugin("PatTune")
 Name: "pattune"; Description: "PatTune - real-time pitch correction"; Types: full custom
@@ -75,14 +79,14 @@ Name: "pattune"; Description: "PatTune - real-time pitch correction"; Types: ful
 #if HasPlugin("PatVerb")
 {#Plugin("PatVerb", "patverb")}
 #endif
-#if HasPlugin("PatDeEss")
-{#Plugin("PatDeEss", "patdeess")}
+#if HasPlugin("PatDeEsser")
+{#Plugin("PatDeEsser", "patdeesser")}
 #endif
-#if HasPlugin("PatPump")
-{#Plugin("PatPump", "patpump")}
+#if HasPlugin("PatSidechain")
+{#Plugin("PatSidechain", "patsidechain")}
 #endif
-#if HasPlugin("PatDouble")
-{#Plugin("PatDouble", "patdouble")}
+#if HasPlugin("PatDoubler")
+{#Plugin("PatDoubler", "patdoubler")}
 #endif
 #if HasPlugin("PatTune")
 {#Plugin("PatTune", "pattune")}

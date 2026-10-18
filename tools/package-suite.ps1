@@ -8,7 +8,7 @@ $suite = Split-Path -Parent $PSScriptRoot
 $projects = Split-Path -Parent $suite
 
 # Plugin folders with their preset extension. Add new plugins here.
-$plugins = [ordered]@{ PatWave = 'pwpreset'; PatVerb = 'pvpreset'; PatDeEss = 'pdpreset'; PatPump = 'pppreset'; PatDouble = 'pbpreset'; PatTune = 'ptpreset' }
+$plugins = [ordered]@{ PatWave = 'pwpreset'; PatVerb = 'pvpreset' }  # stand-alone sibling projects
 
 foreach ($name in $plugins.Keys) {
     $dir = Join-Path $projects $name
@@ -25,6 +25,16 @@ foreach ($name in $plugins.Keys) {
         if ($LASTEXITCODE) { throw "Build of $name failed" }
     } finally { Pop-Location }
     Write-Host "[ok] $name"
+}
+
+# The vocal suite (PatDeEsser, PatSidechain, PatDoubler, PatTune) is one CMake project: this folder.
+if (Test-Path (Join-Path $suite 'plugins\PatDeEsser')) {
+    Write-Host '[..] PatSuite vocal plugins'
+    Push-Location $suite
+    try {
+        & powershell -ExecutionPolicy Bypass -File tools/build.ps1 -Preset dist -CMakeArgs '-DPATSUITE_COPY_VST3=OFF'
+        if ($LASTEXITCODE) { throw 'Build of the PatSuite plugins failed' }
+    } finally { Pop-Location }
 }
 
 $iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") |
