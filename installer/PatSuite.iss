@@ -92,6 +92,7 @@ Name: "pattune"; Description: "PatTune - real-time pitch correction"; Types: ful
 {#Plugin("PatTune", "pattune")}
 #endif
 Source: "{#Projects}\PatWave\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#Projects}\PatWave\THIRD_PARTY.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 #if HasPlugin("PatWave")
@@ -99,6 +100,18 @@ Name: "{autoprograms}\PatSuite\PatWave"; Filename: "{app}\PatWave.exe"; Componen
 #endif
 #if HasPlugin("PatVerb")
 Name: "{autoprograms}\PatSuite\PatVerb"; Filename: "{app}\PatVerb.exe"; Components: patverb
+#endif
+#if HasPlugin("PatDeEsser")
+Name: "{autoprograms}\PatSuite\PatDeEsser"; Filename: "{app}\PatDeEsser.exe"; Components: patdeesser
+#endif
+#if HasPlugin("PatSidechain")
+Name: "{autoprograms}\PatSuite\PatSidechain"; Filename: "{app}\PatSidechain.exe"; Components: patsidechain
+#endif
+#if HasPlugin("PatDoubler")
+Name: "{autoprograms}\PatSuite\PatDoubler"; Filename: "{app}\PatDoubler.exe"; Components: patdoubler
+#endif
+#if HasPlugin("PatTune")
+Name: "{autoprograms}\PatSuite\PatTune"; Filename: "{app}\PatTune.exe"; Components: pattune
 #endif
 
 [Messages]

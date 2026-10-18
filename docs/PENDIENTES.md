@@ -12,7 +12,7 @@
 - **Detección de GPU solo en Windows** (DXGI). En otros sistemas cuenta como "sin GPU dedicada", así que
   arranca en nivel Bajo (se puede cambiar a mano). Por ahora no hay versión para Mac ni Linux.
 - **Instalador PatSuite:** ya reserva lugar para los 4 plugins nuevos, pero no se ejecutó en otra PC.
-- **Ambigüedades a resolver antes de la fase 5 (PatTune):** "In Sen" e "Insen" suelen ser la misma
+- ~~Ambigüedades de la fase 5~~ resueltas por el usuario: "In Sen" e "Insen" suelen ser la misma
   escala; falta definir la afinación de los maqamat (24-EDO exacto o afinaciones tradicionales, que
   varían por región).
 
