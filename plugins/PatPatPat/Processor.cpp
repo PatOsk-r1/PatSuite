@@ -118,6 +118,10 @@ void PatPatPatProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mi
     peakL.store(engine_.outputPeak(0), std::memory_order_relaxed);
     peakR.store(engine_.outputPeak(1), std::memory_order_relaxed);
     duckGain.store(engine_.duckGain(), std::memory_order_relaxed);
+    echoL.store(engine_.echoPeak(0), std::memory_order_relaxed);
+    echoR.store(engine_.echoPeak(1), std::memory_order_relaxed);
+    onsetLevel.store(engine_.onsetLevel(), std::memory_order_relaxed);
+    onsets.store(engine_.onsets(), std::memory_order_relaxed);
 }
 
 juce::AudioProcessorEditor* PatPatPatProcessor::createEditor() { return new PatPatPatEditor(*this); }

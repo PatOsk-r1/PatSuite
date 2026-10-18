@@ -28,6 +28,10 @@ void FrameClock::timerCallback() {
         return;
     }
     if (paused_) restart();
+    // A menu (or a dialog) is open: let it have the message thread, animate at about 5 fps.
+    if (auto* mcm = juce::ModalComponentManager::getInstanceWithoutCreating(); mcm != nullptr && mcm->getNumModalComponents() > 0)
+        if (++skipped_ < juce::jmax(1, rate_ / 5)) return;
+    skipped_ = 0;
 
     const double now = juce::Time::getMillisecondCounterHiRes() * 0.001;
     const float dt = last_ > 0 ? static_cast<float>(juce::jlimit(0.0, 0.25, now - last_)) : 1.0f / static_cast<float>(rate_);

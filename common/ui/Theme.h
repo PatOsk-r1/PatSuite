@@ -47,6 +47,9 @@ public:
     void positionComboBoxText(juce::ComboBox&, juce::Label&) override;
     juce::Font getPopupMenuFont() override { return font(13.5f); }
     void drawPopupMenuBackground(juce::Graphics&, int w, int h) override;
+    // Menus open inside the plugin window instead of as separate desktop windows (lighter, and
+    // hosts like FL Studio do not have to juggle extra top-level windows).
+    juce::Component* getParentComponentForMenuOptions(const juce::PopupMenu::Options& o) override;
 };
 
 }  // namespace pat::ui

@@ -108,6 +108,12 @@ void LookAndFeel::positionComboBoxText(juce::ComboBox& box, juce::Label& label) 
     label.setFont(getComboBoxFont(box));
 }
 
+juce::Component* LookAndFeel::getParentComponentForMenuOptions(const juce::PopupMenu::Options& o) {
+    if (auto* parent = o.getParentComponent()) return parent;
+    if (auto* target = o.getTargetComponent()) return target->getTopLevelComponent();
+    return nullptr;
+}
+
 void LookAndFeel::drawPopupMenuBackground(juce::Graphics& g, int w, int h) {
     g.fillAll(raised);
     g.setColour(line);

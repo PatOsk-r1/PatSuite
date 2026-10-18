@@ -6,10 +6,14 @@
 //   Ping-Pong: the sum starts on the left and every repeat jumps to the other side
 //   Cross:     like Ping-Pong but keeps the stereo input (each side's echoes bounce across)
 //
-// In the feedback loop: low/high cut, saturation (also keeps 100 % feedback under control) and
-// the character (Clean, Tape: wow and flutter, Analog: dark and warm, Lo-Fi: crushed). Around it:
-// diffusion (smears the attack), ducking (echoes get out of the way while you play), freeze
-// (holds the current echoes forever), stereo width of the echoes and the dry/wet mix.
+// Echoes stay as loud as the feedback says: below full scale the loop is clean (no hidden
+// saturation), a soft limiter only catches overloads so 100 % feedback never explodes.
+// Tone (low/high cut) and the character (Clean, Tape: wow/flutter + warmth, Analog: dark and
+// warm, Lo-Fi: crushed and narrow-band) shape every repeat. Changing the time crossfades to the
+// new time (no pitch slide), except in Tape mode, where it glides like a real tape machine.
+// Also: diffusion, ducking, freeze, stereo width and the dry/wet mix.
+//
+// For the display it reports every new hit at the input (onset counter) and the echo levels.
 #pragma once
 
 #include <vector>
@@ -57,7 +61,10 @@ public:
     void reset() noexcept;
     void process(float* l, float* r, int n, const DelaySettings& s, double bpm) noexcept;
 
-    float inputLevel() const noexcept { return inEnv_; }  // for the display (transients)
+    float inputLevel() const noexcept { return fastEnv_; }
+    int onsets() const noexcept { return onsets_; }          // counts new hits at the input
+    float onsetLevel() const noexcept { return onsetLevel_; }  // level of the last hit
+    float echoPeak(int ch) const noexcept { return ch == 0 ? echoL_ : echoR_; }
     float outputPeak(int ch) const noexcept { return ch == 0 ? peakL_ : peakR_; }
     float duckGain() const noexcept { return duckGain_; }
 
@@ -66,7 +73,7 @@ private:
         std::vector<float> buf;
         int write = 0;
         void push(float x) noexcept;
-        float read(double delaySamples) const noexcept;  // cubic interpolation
+        float read(double delaySamples) const noexcept;  // 4-point Hermite
     };
     struct OnePole {
         float z = 0;
@@ -77,22 +84,26 @@ private:
         int idx = 0, len = 1;
         float run(float x, float g) noexcept;
     };
+    struct Time {  // one side's delay time, with crossfade (or glide) to a new value
+        double cur = 0, next = 0, fade = 1.0;
+        bool fresh = true;
+    };
 
-    float shape(float x, float k) const noexcept;
-    float loopTone(float x, int ch, const DelaySettings& s, float lpA, float hpA) noexcept;
+    float tone(float x, int ch, const DelaySettings& s, float lpA, float hpA) noexcept;
+    float readTime(int ch, double mod) noexcept;
 
     double sr_ = 48000.0;
     Line line_[2];
-    OnePole lowpass_[2], lowpass2_[2], highpass_[2];
+    Time time_[2];
+    OnePole lp1_[2], lp2_[2], hp_[2];
     Allpass diff_[2][4];
-    double delay_[2] = {0, 0};   // smoothed delay in samples
-    double lfo_ = 0, wow_ = 0;   // phases 0..1
-    float fbState_[2] = {0, 0};  // last echo output of each line
+    double lfo_ = 0, wow_ = 0;
     float crushHold_[2] = {0, 0};
     double crushPhase_ = 0;
-    float inEnv_ = 0, duckEnv_ = 0, duckGain_ = 1;
-    float peakL_ = 0, peakR_ = 0;
-    bool first_ = true;
+    float fastEnv_ = 0, slowEnv_ = 0, duckEnv_ = 0, duckGain_ = 1;
+    int holdoff_ = 0, onsets_ = 0;
+    float onsetLevel_ = 0;
+    float echoL_ = 0, echoR_ = 0, peakL_ = 0, peakR_ = 0;
 };
 
 }  // namespace pat::dsp

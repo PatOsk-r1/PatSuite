@@ -65,7 +65,8 @@ public:
     juce::AudioProcessorValueTreeState state;
     std::unique_ptr<pat::ui::PresetLibrary> presets;
     std::atomic<double> bpm{120};
-    std::atomic<float> inputLevel{0}, peakL{0}, peakR{0}, duckGain{1};
+    std::atomic<float> inputLevel{0}, peakL{0}, peakR{0}, duckGain{1}, echoL{0}, echoR{0}, onsetLevel{0};
+    std::atomic<int> onsets{0};  // new hits at the input (the display throws a ball for each)
 
 private:
     pat::dsp::DelayEngine engine_;

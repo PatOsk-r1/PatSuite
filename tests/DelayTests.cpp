@@ -244,3 +244,54 @@ TEST(DelayEngine, CpuCost) {
     std::printf("PatPatPat CPU: %.2f %% of one core\n", pct);
     EXPECT_LT(pct, 10.0);
 }
+
+TEST(DelayEngine, EchoesKeepTheirLevel) {
+    // A normal-level sound comes back as loud as it went in (no hidden saturation or loss).
+    auto s = wet();
+    s.mode = DelaySettings::Mono;
+    s.timeLMs = 200.0f;
+    s.feedback = 0.0f;
+    DelayEngine e;
+    e.prepare(kSr);
+    std::vector<float> l(24000, 0.0f), r(24000, 0.0f);
+    for (int i = 0; i < 960; ++i) l[static_cast<std::size_t>(i)] = r[static_cast<std::size_t>(i)] = 0.5f * std::sin(i * 2.0f * 3.14159f * 440.0f / 48000.0f);
+    const float inEnergy = energy(l, 0, 960);
+    e.process(l.data(), r.data(), 24000, s, 120);
+    const float outEnergy = energy(l, 9600, 9600 + 1100);
+    EXPECT_NEAR(10.0f * std::log10(outEnergy / inEnergy), 0.0f, 1.0f);
+}
+
+TEST(DelayEngine, CountsEveryHit) {
+    DelaySettings s;
+    DelayEngine e;
+    e.prepare(kSr);
+    std::vector<float> l(48000 * 2, 0.0f), r(48000 * 2, 0.0f);
+    for (int hit = 0; hit < 4; ++hit)
+        for (int i = 0; i < 2000; ++i)
+            l[static_cast<std::size_t>(hit * 24000 + i)] = r[static_cast<std::size_t>(hit * 24000 + i)] =
+                0.6f * std::exp(-i / 400.0f) * std::sin(i * 0.05f);
+    for (int i = 0; i < 96000; i += 512) e.process(l.data() + i, r.data() + i, std::min(512, 96000 - i), s, 120);
+    EXPECT_EQ(e.onsets(), 4);
+}
+
+TEST(DelayEngine, TimeChangeHasNoGap) {
+    // Changing the time crossfades: the echo never drops out (a pure tone is the worst case: the
+    // two times can be out of phase for a moment, so only a full gap counts as a failure).
+    auto s = wet();
+    s.mode = DelaySettings::Mono;
+    s.timeLMs = 100.0f;
+    s.feedback = 0.0f;
+    DelayEngine e;
+    e.prepare(kSr);
+    std::vector<float> l(256), r(256);
+    float minPeak = 1.0f;
+    for (int b = 0; b < 200; ++b) {
+        for (int i = 0; i < 256; ++i) l[static_cast<std::size_t>(i)] = r[static_cast<std::size_t>(i)] = 0.5f * std::sin((b * 256 + i) * 0.06f);
+        if (b == 100) s.timeLMs = 160.0f;
+        e.process(l.data(), r.data(), 256, s, 120);
+        float pk = 0;
+        for (float v : l) pk = std::max(pk, std::abs(v));
+        if (b > 30) minPeak = std::min(minPeak, pk);
+    }
+    EXPECT_GT(minPeak, 0.12f);
+}

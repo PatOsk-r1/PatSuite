@@ -34,7 +34,7 @@ private:
     PerfSettings& settings_;
     std::vector<std::function<void(float)>> callbacks_;
     bool paused_ = false;
-    int rate_ = 30;
+    int rate_ = 30, skipped_ = 0;
     double last_ = 0;
     float fps_ = 0;
 };

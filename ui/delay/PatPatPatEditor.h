@@ -37,5 +37,5 @@ private:
     juce::AudioProcessorValueTreeState::ButtonAttachment syncAttachment_, linkAttachment_, freezeAttachment_;
     juce::Label modeLabel_, characterLabel_, hint_;
     bool simulating_ = false;
-    float avgIn_ = 0, sinceShot_ = 1;
+    int lastOnsets_ = 0;
 };
