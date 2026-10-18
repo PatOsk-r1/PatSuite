@@ -31,7 +31,8 @@ if (-not (Test-Path "build/$Preset/CMakeCache.txt") -or $CMakeArgs.Count) {
     cmake --preset $Preset @CMakeArgs
     if ($LASTEXITCODE) { throw 'CMake configure failed' }
 }
-$buildArgs = @('--build', '--preset', $Preset)
+# Two jobs at a time: with 8 GB of RAM, more parallel (LTO) links can exhaust memory and freeze the PC.
+$buildArgs = @('--build', '--preset', $Preset, '--parallel', '2')
 if ($Target) { $buildArgs += @('--target', $Target) }
 cmake @buildArgs
 if ($LASTEXITCODE) { throw 'Build failed' }
