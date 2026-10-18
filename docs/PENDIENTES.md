@@ -25,4 +25,17 @@
   humanize. La calidad de PSOLA baja en pasajes muy rápidos o con mucha respiración.
 - PatTune: no tiene corrección por MIDI (notas objetivo desde un teclado): no estaba en el pedido.
 - PatDoubler: las copias suenan a "delay + 16 ms" por el desplazador de tono.
-- Sin presets en los plugins de la suite (no estaban en el pedido). Los ajustes se guardan con el proyecto de FL.
+
+## Segunda tanda (Patan, PatPatPat, PatQpro, presets)
+
+- Nada de esto se probó todavía dentro de FL Studio (queda instalado).
+- PatQpro: en modo Linear phase, si hay bandas L/R y Mid/Side a la vez, se aplican primero las L/R y
+  después las Mid/Side (en los otros modos se respeta el orden de las bandas).
+- PatQpro: la detección de choques funciona entre instancias que corren en el mismo proceso. Si FL
+  ejecuta un plugin en un proceso aparte ("bridged"), esa instancia no aparece en la lista.
+- PatQpro: el nombre de cada instancia es el de la pista del mixer si FL lo informa; si no,
+  "PatQpro 1", "PatQpro 2"...
+- PatQpro: el EQ Match ajusta campanas y estantes; no copia diferencias muy finas (a propósito, para
+  que suene natural).
+- PatPatPat: el tiempo máximo es 4 segundos (notas largas a tempos lentos se recortan a 4 s).
+- Patan: no hay copiar/pegar curvas entre instancias (se puede guardar la curva como preset).

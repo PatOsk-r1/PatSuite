@@ -27,11 +27,14 @@ foreach ($name in $plugins.Keys) {
     Write-Host "[ok] $name"
 }
 
-# The vocal suite (PatDeEsser, PatSidechain, PatDoubler, PatTune) is one CMake project: this folder.
+# The suite plugins (PatDeEsser, PatSidechain, PatDoubler, PatTune, Patan, PatPatPat, PatQpro) are one
+# CMake project: this folder. Your presets are collected first so they ship inside each plugin.
 if (Test-Path (Join-Path $suite 'plugins\PatDeEsser')) {
-    Write-Host '[..] PatSuite vocal plugins'
+    Write-Host '[..] PatSuite plugins'
     Push-Location $suite
     try {
+        & powershell -ExecutionPolicy Bypass -File tools/collect-presets.ps1
+        if ($LASTEXITCODE) { throw 'Collecting the PatSuite presets failed' }
         & powershell -ExecutionPolicy Bypass -File tools/build.ps1 -Preset dist -CMakeArgs '-DPATSUITE_COPY_VST3=OFF'
         if ($LASTEXITCODE) { throw 'Build of the PatSuite plugins failed' }
     } finally { Pop-Location }

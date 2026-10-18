@@ -1,8 +1,9 @@
 # PatSuite
 
 Free, open-source (AGPL-3.0) suite of visual audio plugins for FL Studio and any VST3 host:
-**PatDeEsser**, **PatSidechain**, **PatDoubler** and **PatTune** (in progress), plus the
-one-click installer that also installs **PatWave** and **PatVerb**.
+**PatDeEsser**, **PatSidechain**, **PatDoubler**, **PatTune**, **Patan** (auto-panner),
+**PatPatPat** (ping-pong delay) and **PatQpro** (pro equalizer), plus the one-click installer that
+also installs **PatWave** and **PatVerb**. Every plugin comes with factory presets and saves yours.
 
 Black-and-neon look, a Simple view for beginners and a Pro view with every control, three visual
 performance levels, and a "Neon fixed" mode without animations.
@@ -30,12 +31,13 @@ Built plugins end up in `build/release/plugins/<Name>/<Name>_artefacts/RelWithDe
 ## Layout
 
 ```
-common/core   pure C++ (no JUCE, unit-tested): lock-free FIFO, performance rule, tuning tables, FFT
+common/core   pure C++ (no JUCE, unit-tested): lock-free FIFO, triple buffer, performance rule, tuning tables, FFT
 common/ui     JUCE: theme, knob, meter, spectrum, layered canvas, frame clock, performance settings,
-              PluginFrame (shared editor shell: Simple/Pro, level selector, Neon fixed)
+              PluginFrame (shared editor shell: presets, Simple/Pro, level selector, Neon fixed)
 dsp/<plugin>  audio engines, pure C++ and unit-tested
 ui/<plugin>   editors
 plugins/<P>   one CMake target + processor per plugin
 docs/         DECISIONES.md (technical decisions), PENDIENTES.md (open items)
 installer/    PatSuite.iss (one installer for every Pat plugin)
+presets/      your own presets, collected by tools/collect-presets.ps1, ship inside each plugin
 ```

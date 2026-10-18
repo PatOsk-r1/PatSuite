@@ -20,6 +20,12 @@ public:
     NeonKnob(const juce::String& label, juce::Colour colour, PerfSettings& settings, Size size = Size::Normal);
     ~NeonKnob() override;
 
+    // Bind to another parameter (e.g. the selected EQ band).
+    void attach(juce::AudioProcessorValueTreeState& state, const juce::String& paramId);
+    void setLabel(const juce::String& l) {
+        label_ = l;
+        repaint();
+    }
     void setAccent(juce::Colour c) {
         colour_ = c;
         repaint();

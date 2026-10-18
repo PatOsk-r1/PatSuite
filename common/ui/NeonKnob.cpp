@@ -9,12 +9,18 @@ constexpr float kEnd = juce::MathConstants<float>::pi * 2.75f;
 NeonKnob::NeonKnob(juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& label, juce::Colour colour,
                    PerfSettings& settings, Size size)
     : label_(label), colour_(colour), settings_(settings), size_(size) {
-    attachment_ = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(state, paramId, *this);
     init();
+    attach(state, paramId);
+}
+
+void NeonKnob::attach(juce::AudioProcessorValueTreeState& state, const juce::String& paramId) {
+    attachment_.reset();
+    attachment_ = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(state, paramId, *this);
     if (auto* p = state.getParameter(paramId)) {
         setDoubleClickReturnValue(true, p->convertFrom0to1(p->getDefaultValue()));
         setTooltip(p->getName(64) + "  (double-click: reset, Shift+drag: fine)");
     }
+    repaint();
 }
 
 NeonKnob::NeonKnob(const juce::String& label, juce::Colour colour, PerfSettings& settings, Size size)

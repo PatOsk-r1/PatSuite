@@ -27,7 +27,7 @@ std::vector<pat::ui::FactoryPreset> SidechainProcessor::factoryPresets() {
         {"Voice Over Music", "Sidechain/Voice", 2, 0.6f, 0, -36, 15, 500, 10, 4, 150, 4000},
         {"Podcast Ducker", "Sidechain/Voice", 2, 0.75f, 0, -40, 20, 700, 12, 6, 120, 5000},
         {"Snare Gap", "Sidechain/Drums", 2, 0.6f, 0, -26, 1, 110, 4, 8, 150, 2000},
-        {"Hat Chop", "Sidechain/Drums", 2, 0.5f, 0, -30, 0.3f, 40, 2, 10, 4000, 20000},
+        {"Hat Chop", "Sidechain/Drums", 2, 0.5f, 0, -30, 0.3f, 40, 2, 10, 500, 20000},
         {"Auto Glue", "Auto/Compression", 0, 0.4f, 0, -18, 10, 200, 8, 3, 20, 20000},
         {"Auto Low-End Pump", "Auto/Compression", 0, 0.75f, 0, -24, 2, 180, 6, 8, 20, 150},
         {"Auto Heavy Breath", "Auto/Compression", 0, 0.95f, 0, -30, 1, 280, 4, 14, 20, 200},

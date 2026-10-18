@@ -67,6 +67,15 @@ Name: "patdoubler"; Description: "PatDoubler - vocal doubler"; Types: full custo
 #if HasPlugin("PatTune")
 Name: "pattune"; Description: "PatTune - real-time pitch correction"; Types: full custom
 #endif
+#if HasPlugin("Patan")
+Name: "patan"; Description: "Patan - auto panner with drawn curves"; Types: full custom
+#endif
+#if HasPlugin("PatPatPat")
+Name: "patpatpat"; Description: "PatPatPat - stereo / ping-pong delay"; Types: full custom
+#endif
+#if HasPlugin("PatQpro")
+Name: "patqpro"; Description: "PatQpro - pro equalizer"; Types: full custom
+#endif
 
 [Files]
 ; Each plugin: the VST3 where every DAW looks, plus its standalone app.
@@ -91,6 +100,15 @@ Name: "pattune"; Description: "PatTune - real-time pitch correction"; Types: ful
 #if HasPlugin("PatTune")
 {#Plugin("PatTune", "pattune")}
 #endif
+#if HasPlugin("Patan")
+{#Plugin("Patan", "patan")}
+#endif
+#if HasPlugin("PatPatPat")
+{#Plugin("PatPatPat", "patpatpat")}
+#endif
+#if HasPlugin("PatQpro")
+{#Plugin("PatQpro", "patqpro")}
+#endif
 Source: "{#Projects}\PatWave\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Projects}\PatWave\THIRD_PARTY.txt"; DestDir: "{app}"; Flags: ignoreversion
 
@@ -112,6 +130,15 @@ Name: "{autoprograms}\PatSuite\PatDoubler"; Filename: "{app}\PatDoubler.exe"; Co
 #endif
 #if HasPlugin("PatTune")
 Name: "{autoprograms}\PatSuite\PatTune"; Filename: "{app}\PatTune.exe"; Components: pattune
+#endif
+#if HasPlugin("Patan")
+Name: "{autoprograms}\PatSuite\Patan"; Filename: "{app}\Patan.exe"; Components: patan
+#endif
+#if HasPlugin("PatPatPat")
+Name: "{autoprograms}\PatSuite\PatPatPat"; Filename: "{app}\PatPatPat.exe"; Components: patpatpat
+#endif
+#if HasPlugin("PatQpro")
+Name: "{autoprograms}\PatSuite\PatQpro"; Filename: "{app}\PatQpro.exe"; Components: patqpro
 #endif
 
 [Messages]

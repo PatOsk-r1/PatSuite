@@ -40,3 +40,22 @@
 | PatTune: **escalas.** Maqamat en 24-EDO; "In Sen / Insen" como una sola escala; escala dibujada con 24 pasos de cuarto de tono | Decidido por el usuario. El motor acepta cualquier tabla de cents (`TuningTable`), así que agregar más escalas es solo agregar datos. |
 | `TuningTable` de capacidad fija (128 grados, sin memoria dinámica) | El hilo de audio la reconstruye cuando cambia la escala o la tonalidad sin reservar memoria. |
 | Retune speed como constante de tiempo; humanize la estira en desvíos chicos de notas sostenidas | Con 0 ms da el efecto robótico; con humanize se conserva el vibrato natural. |
+
+## Segunda tanda: presets, Patan, PatPatPat y PatQpro
+
+| Decisión | Por qué |
+|---|---|
+| **Presets comunes** (`common/ui/Presets`): de fábrica en código, del usuario en `Documentos\PatSuite\<Plugin>\Presets` (`.patpreset`, XML), compartidos dentro del plugin con `tools/collect-presets.ps1` | Pedido del usuario: los presets propios viajan dentro del plugin al compartirlo. La subcarpeta "Privado" nunca se comparte. Cargar un preset vuelve todo a los valores por defecto y aplica solo lo que el preset define. |
+| Barra de presets en la cabecera de todos los plugins (anterior / menú por carpetas / siguiente / SAVE) | Mismo lugar en todos. El nombre del preset queda guardado en el proyecto de FL. |
+| Estado que no es parámetro (curva de Patan, escala dibujada de PatTune) viaja en los presets como "extras" | Así un preset reproduce el sonido completo. |
+| **Patan:** curva dibujada (puntos con curvatura, tramos suaves o escalones), modos Pan / Volumen / Ancho, ciclo en notas o en Hz, leyes de paneo Balance / -3 / -4,5 / -6 dB | Auto-panner de curva dibujada con estética propia. La curva pasa al audio con un triple buffer sin bloqueos. Mientras FL reproduce, la posición sigue la canción. |
+| **PatPatPat:** modos Mono / Estéreo / Ping-Pong / Cross, carácter Clean / Tape / Analog / Lo-Fi, ducking, freeze, difusión | Delay completo con ping-pong, pedido por el usuario. La saturación dentro del lazo mantiene acotado el 100 % de feedback (test `FullFeedbackStaysBounded`). Los cambios de tiempo se deslizan como una cinta. |
+| PatPatPat: visual de pelotas que rebotan entre L y R con los tiempos y niveles reales de los ecos | Muestra lo que se escucha (usa la misma función `taps()` que se prueba con tests). En Neón fijo queda solo el mapa de ecos. |
+| **PatQpro:** 24 bandas; campana, estantes, cortes de 6 a 96 dB/oct y brickwall, notch, pasabanda, tilt y flat tilt; cada banda en estéreo, L, R, Mid o Side | Todo lo que hace un EQ profesional de referencia, con nombres y diseño propios. |
+| PatQpro: estantes tipo Butterworth de cualquier pendiente, con la frecuencia en el punto de media ganancia; cortes Butterworth con Q como resonancia | Pendientes reales (no estantes repetidos) y respuesta predecible. Verificado con tests de forma. |
+| PatQpro: modos **Zero latency** (biquads), **Natural** (las bandas corren al doble de la frecuencia de muestreo con filtros medio-banda IIR, 3 muestras de latencia) y **Linear phase** (FIR por FFT particionada, latencia 512 + largo/2) | Natural conserva la forma analógica arriba de 10 kHz. Linear no corre la fase (test de respuesta al impulso simétrica). Las bandas dinámicas siguen como filtros naturales después del FIR. |
+| PatQpro: el FIR se arma en un hilo aparte y entra al audio sin bloqueos, con un fundido de un bloque | Mover una banda en modo lineal no traba el audio ni hace clicks. |
+| PatQpro: bandas dinámicas con umbral y rango propios, detector en la zona de la banda, opción de escuchar el sidechain | EQ dinámico pedido por el usuario. Ataque y release son globales. |
+| PatQpro: **detección de choques** entre instancias: cada PatQpro publica su espectro de salida en un "hub" compartido (mismo proceso) | Se elige otra pista (o el sidechain) y se marcan en rojo las frecuencias donde las dos suenan fuerte y parecido. Usa el nombre de la pista de FL cuando el host lo informa. |
+| PatQpro: **EQ Match** aprende unos segundos de la referencia (sidechain u otra pista) y de la pista propia, y ajusta campanas y estantes a la diferencia suavizada (1/3 de octava) | Reemplaza las bandas (se puede deshacer). Cantidad de bandas y porcentaje regulables. |
+| PatQpro: deshacer/rehacer, auto gain por el promedio de la curva, gain scale, pan y polaridad de salida, solo de banda, nota musical en la lectura, teclado de piano opcional | Funciones habituales de un EQ profesional ("que funcione igual"). |
