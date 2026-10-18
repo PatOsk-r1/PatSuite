@@ -16,6 +16,8 @@ public:
 
     NeonKnob(juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& label, juce::Colour colour,
              PerfSettings& settings, Size size = Size::Normal);
+    // Not bound to a parameter (macro knobs that drive several parameters from the editor).
+    NeonKnob(const juce::String& label, juce::Colour colour, PerfSettings& settings, Size size = Size::Normal);
     ~NeonKnob() override;
 
     void setAccent(juce::Colour c) {
@@ -32,7 +34,8 @@ private:
     juce::Colour colour_;
     PerfSettings& settings_;
     Size size_;
-    juce::AudioProcessorValueTreeState::SliderAttachment attachment_;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attachment_;
+    void init();
 };
 
 }  // namespace pat::ui

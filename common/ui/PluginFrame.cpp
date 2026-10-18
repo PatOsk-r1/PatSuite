@@ -1,5 +1,7 @@
 #include "common/ui/PluginFrame.h"
 
+#include "common/ui/KeyboardFocus.h"
+
 namespace pat::ui {
 
 PluginFrame::PluginFrame(juce::AudioProcessor& p, juce::AudioProcessorValueTreeState& state, const juce::String& name,
@@ -65,6 +67,7 @@ void PluginFrame::finishConstruction() {
     if (auto* c = getConstrainer()) c->setFixedAspectRatio(static_cast<double>(width_) / height_);
     setSize(width_, height_);
     resized();
+    releaseKeyboard(*this);  // keep the host's computer-keyboard MIDI working
 }
 
 PluginFrame::~PluginFrame() {
@@ -149,7 +152,7 @@ void PluginFrame::runSnapshot() {
                 // Average render time over a few frames (static layer cached after the first).
                 const double t0 = juce::Time::getMillisecondCounterHiRes();
                 juce::Image img;
-                for (int k = 0; k < 5; ++k) img = canvas_.createComponentSnapshot(canvas_.getLocalBounds(), true, 1.0f);
+                for (int k = 0; k < 5; ++k) img = createComponentSnapshot(getLocalBounds(), true, 1.0f);  // includes the background
                 const double ms = (juce::Time::getMillisecondCounterHiRes() - t0) / 5.0;
                 const juce::String tag = juce::String(std::string(tierName(static_cast<PerfTier>(t)))).toLowerCase() + (neon ? "-neonfixed" : "-animated") +
                                          (pro ? "-pro" : "-simple");

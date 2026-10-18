@@ -24,9 +24,12 @@ public:
     void tick(float dt);  // pull audio, analyse, repaint if needed (call from the FrameClock)
     void setHighlight(float lowHz, float highHz, juce::Colour c);
     void clearHighlight() { highlight_ = false; }
+    // 0..1: how strongly the highlighted band glows (e.g. the de-esser's current reduction).
+    void setHighlightIntensity(float v);
     void useTestSignal(bool on) { testSignal_ = on; }  // diagnostic snapshots
 
     static float xForHz(float hz, float width) noexcept;  // log axis 20 Hz .. 20 kHz
+    static float hzForX(float x, float width) noexcept;
 
 protected:
     void paintStatic(juce::Graphics&) override;
@@ -43,7 +46,7 @@ private:
     std::vector<std::complex<float>> scratch_;
     std::vector<float> display_;  // dB per display point
     bool highlight_ = false, testSignal_ = false;
-    float hlLow_ = 0, hlHigh_ = 0;
+    float hlLow_ = 0, hlHigh_ = 0, hlIntensity_ = 0;
     juce::Colour hlColour_;
     double testPhase_ = 0;
     juce::Random rng_;

@@ -15,6 +15,18 @@ float SpectrumView::xForHz(float hz, float width) noexcept {
     return width * std::log(juce::jlimit(kMinHz, kMaxHz, hz) / kMinHz) / std::log(kMaxHz / kMinHz);
 }
 
+float SpectrumView::hzForX(float x, float width) noexcept {
+    return kMinHz * std::pow(kMaxHz / kMinHz, juce::jlimit(0.0f, 1.0f, x / juce::jmax(1.0f, width)));
+}
+
+void SpectrumView::setHighlightIntensity(float v) {
+    v = juce::jlimit(0.0f, 1.0f, v);
+    if (std::abs(v - hlIntensity_) > 0.02f) {
+        hlIntensity_ = v;
+        repaint();
+    }
+}
+
 const Fft& SpectrumView::fftFor(int size) {
     auto& f = ffts_[size];
     if (!f) f = std::make_unique<Fft>(size);
@@ -119,9 +131,15 @@ void SpectrumView::paintDynamic(juce::Graphics& g) {
     const auto r = getLocalBounds().toFloat();
     if (highlight_) {
         const float x0 = xForHz(hlLow_, r.getWidth()), x1 = xForHz(hlHigh_, r.getWidth());
-        g.setColour(hlColour_.withAlpha(0.10f));
-        g.fillRect(juce::Rectangle<float>::leftTopRightBottom(x0, r.getY(), x1, r.getBottom()));
-        g.setColour(hlColour_.withAlpha(0.7f));
+        const auto band = juce::Rectangle<float>::leftTopRightBottom(x0, r.getY(), x1, r.getBottom());
+        g.setColour(hlColour_.withAlpha(0.08f + 0.22f * hlIntensity_));
+        g.fillRect(band);
+        if (glow() && hlIntensity_ > 0.01f) {  // soft bloom while the band is active
+            g.setGradientFill(juce::ColourGradient(hlColour_.withAlpha(0.35f * hlIntensity_), band.getCentreX(), r.getY(),
+                                                   hlColour_.withAlpha(0.0f), band.getCentreX(), r.getBottom(), false));
+            g.fillRect(band);
+        }
+        g.setColour(hlColour_.withAlpha(0.6f + 0.4f * hlIntensity_));
         g.drawVerticalLine(juce::roundToInt(x0), r.getY(), r.getBottom());
         g.drawVerticalLine(juce::roundToInt(x1), r.getY(), r.getBottom());
     }

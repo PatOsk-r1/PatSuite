@@ -38,6 +38,15 @@ if(MSVC)
     target_compile_options(pat_core PRIVATE $<$<NOT:$<CONFIG:Debug>>:/O2 /fp:fast>)
 endif()
 
+# dsp: the audio engines, pure C++ (no JUCE), unit-tested
+add_library(pat_dsp STATIC
+    dsp/deesser/DeEsserEngine.cpp
+)
+target_link_libraries(pat_dsp PUBLIC pat_core PRIVATE pat_warnings)
+if(MSVC)
+    target_compile_options(pat_dsp PRIVATE $<$<NOT:$<CONFIG:Debug>>:/O2 /fp:fast>)
+endif()
+
 # ---------------------------------------------------------------------------------------------
 if(PATSUITE_BUILD_PLUGINS)
     add_subdirectory(${PAT_THIRD_PARTY}/JUCE ${CMAKE_BINARY_DIR}/JUCE EXCLUDE_FROM_ALL)
@@ -67,11 +76,12 @@ if(PATSUITE_BUILD_PLUGINS)
             JUCE_VST3_CAN_REPLACE_VST2=0
             JUCE_DISPLAY_SPLASH_SCREEN=0)
         target_link_libraries(${target}
-            PRIVATE pat_core pat_ui pat_warnings juce::juce_audio_utils juce::juce_dsp
+            PRIVATE pat_core pat_dsp pat_ui pat_warnings juce::juce_audio_utils juce::juce_dsp
             PUBLIC juce::juce_recommended_config_flags juce::juce_recommended_lto_flags)
     endfunction()
 
     add_subdirectory(plugins/PatTemplate)
+    add_subdirectory(plugins/PatDeEsser)
 endif()
 
 # ---------------------------------------------------------------------------------------------
@@ -80,8 +90,8 @@ if(PATSUITE_BUILD_TESTS)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     add_subdirectory(${PAT_THIRD_PARTY}/googletest ${CMAKE_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
-    add_executable(pat_tests tests/CoreTests.cpp)
-    target_link_libraries(pat_tests PRIVATE pat_core pat_warnings GTest::gtest_main)
+    add_executable(pat_tests tests/CoreTests.cpp tests/DeEsserTests.cpp)
+    target_link_libraries(pat_tests PRIVATE pat_core pat_dsp pat_warnings GTest::gtest_main)
     include(GoogleTest)
     gtest_discover_tests(pat_tests DISCOVERY_MODE PRE_TEST)
 endif()

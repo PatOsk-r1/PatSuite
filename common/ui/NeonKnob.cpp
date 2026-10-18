@@ -8,16 +8,26 @@ constexpr float kEnd = juce::MathConstants<float>::pi * 2.75f;
 
 NeonKnob::NeonKnob(juce::AudioProcessorValueTreeState& state, const juce::String& paramId, const juce::String& label, juce::Colour colour,
                    PerfSettings& settings, Size size)
-    : label_(label), colour_(colour), settings_(settings), size_(size), attachment_(state, paramId, *this) {
-    setSliderStyle(juce::Slider::RotaryVerticalDrag);
-    setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    setRotaryParameters(kStart, kEnd, true);
-    setMouseDragSensitivity(size == Size::Big ? 300 : 220);
-    setVelocityModeParameters(0.6, 1, 0.08, true, juce::ModifierKeys::shiftModifier);
+    : label_(label), colour_(colour), settings_(settings), size_(size) {
+    attachment_ = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(state, paramId, *this);
+    init();
     if (auto* p = state.getParameter(paramId)) {
         setDoubleClickReturnValue(true, p->convertFrom0to1(p->getDefaultValue()));
         setTooltip(p->getName(64) + "  (double-click: reset, Shift+drag: fine)");
     }
+}
+
+NeonKnob::NeonKnob(const juce::String& label, juce::Colour colour, PerfSettings& settings, Size size)
+    : label_(label), colour_(colour), settings_(settings), size_(size) {
+    init();
+}
+
+void NeonKnob::init() {
+    setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+    setRotaryParameters(kStart, kEnd, true);
+    setMouseDragSensitivity(size_ == Size::Big ? 300 : 220);
+    setVelocityModeParameters(0.6, 1, 0.08, true, juce::ModifierKeys::shiftModifier);
     settings_.addChangeListener(this);
 }
 

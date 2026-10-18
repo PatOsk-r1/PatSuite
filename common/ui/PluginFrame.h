@@ -33,6 +33,7 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() final;
+    bool keyPressed(const juce::KeyPress&) override { return false; }  // keys belong to the host
 
 protected:
     // Subclasses call this at the end of their constructor, once their views exist.
