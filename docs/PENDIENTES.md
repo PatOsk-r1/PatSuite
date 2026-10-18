@@ -15,3 +15,14 @@
 - **Ambigüedades a resolver antes de la fase 5 (PatTune):** "In Sen" e "Insen" suelen ser la misma
   escala; falta definir la afinación de los maqamat (24-EDO exacto o afinaciones tradicionales, que
   varían por región).
+
+## Fases 2 a 6
+
+- Nada se probó todavía dentro de FL Studio (quedan instalados para que los pruebes). Ver `docs/PRUEBAS.md`.
+- PatSidechain: falta comprobar en FL el ruteo del sidechain (en el mixer: "Sidechain to this track")
+  y que el bus auxiliar quede activo.
+- PatTune: probado con tonos sintéticos. Con voces reales pueden hacer falta ajustes finos del gate y del
+  humanize. La calidad de PSOLA baja en pasajes muy rápidos o con mucha respiración.
+- PatTune: no tiene corrección por MIDI (notas objetivo desde un teclado): no estaba en el pedido.
+- PatDoubler: las copias suenan a "delay + 16 ms" por el desplazador de tono.
+- Sin presets en los plugins de la suite (no estaban en el pedido). Los ajustes se guardan con el proyecto de FL.

@@ -21,3 +21,22 @@
 | **Lienzo de tamaño fijo, escalado** | El editor se diseña a un tamaño fijo y se escala, así la ventana puede cambiar de tamaño sin rehacer la disposición. |
 | **Tablas de afinación arbitrarias** (`TuningTable`): grados en cents dentro de un período (1200 = octava, aunque puede ser otro) | Base del motor de PatTune. Soporta 12 semitonos, cuartos de tono (24-EDO), intervalos neutros de maqam con cualquier valor en cents, escalas dibujadas y períodos que no son la octava. Ya probado con tests. |
 | **Modo diagnóstico** `PATSUITE_SNAPSHOT` | Permite verificar cada combinación de nivel × Neón fijo × vista sin manejar la pantalla, y mide el costo de dibujo (`render-cost.csv`). |
+
+## Fases 2 a 5: plugins
+
+| Decisión | Por qué |
+|---|---|
+| **Foco del teclado:** ningún control toma el foco del teclado (`releaseKeyboard` + `EDITOR_WANTS_KEYBOARD_FOCUS FALSE` + `keyPressed` que devuelve `false`) | FL Studio usa el teclado de la PC como teclado MIDI. Si un control del plugin se queda con el foco, FL deja de recibir esas teclas. |
+| **PatDeEsser:** detector pasabanda TPT con ganancia unitaria en el centro; compresor con curva suave de 6 dB | La división por filtro de variables de estado reconstruye la señal exacta (`x = resto + banda`), así que en modo Split la voz no se colorea cuando no hay reducción (test `SplitIsTransparentWhenNotReducing`). |
+| PatDeEsser: **"Smooth"** es una macro de la interfaz que mueve threshold y ratio | Pedido del usuario. Los valores reales se ven y se automatizan en Pro. |
+| PatDeEsser: se agregaron **Release** y **Output** | Aprobado por el usuario. |
+| **PatSidechain:** modos Tempo / Sidechain / Auto. "Pump" es la profundidad en los dos | La vista simple pedida (Pump + 1/4, 1/8, 1/16) necesita un modo a tempo que no depende de rutear el bombo. La vista pro es un compresor sidechain con filtro en la cadena lateral. Auto elige Sidechain mientras entra señal por ese bus. |
+| PatSidechain: el ducking a tempo sigue la posición de la canción (ppq del host) | Así queda en fase con el bombo aunque arranques la reproducción en cualquier lugar. |
+| **PatDoubler:** desafinación con desplazador de tono de dos lecturas cruzadas (ventana de 24 ms); variación de tiempo con deriva aleatoria suave | Es liviano y suena limpio para desafinaciones chicas (±50 cents). Contra: agrega 16 ms fijos a cada copia (documentado). |
+| PatDoubler: Width y Thickness son parámetros globales que escalan los valores de cada copia | No hay macros que sincronizar: la vista simple y la pro conviven sin conflicto. |
+| **PatTune, detección:** método McLeod (NSDF por FFT), ventana de unos 43 ms, salto de unos 5 ms, rango de 70 a 1000 Hz | Es preciso con voces (±0,3 % en los tests) y da una "claridad" que se usa directamente como medidor de confianza. |
+| **PatTune, corrección:** TD-PSOLA con marcas fraccionarias exactamente a un período de distancia | PSOLA conserva los formantes (la voz no suena "ardilla"). Las marcas fraccionarias evitan el desfasaje con períodos no enteros (se detectó y corrigió con tests). El formant shift se hace leyendo cada grano más rápido o más lento. |
+| PatTune: latencia de 33 ms informada al host | PSOLA necesita ver un poco más de dos períodos de la nota más grave. FL compensa la latencia. |
+| PatTune: **escalas.** Maqamat en 24-EDO; "In Sen / Insen" como una sola escala; escala dibujada con 24 pasos de cuarto de tono | Decidido por el usuario. El motor acepta cualquier tabla de cents (`TuningTable`), así que agregar más escalas es solo agregar datos. |
+| `TuningTable` de capacidad fija (128 grados, sin memoria dinámica) | El hilo de audio la reconstruye cuando cambia la escala o la tonalidad sin reservar memoria. |
+| Retune speed como constante de tiempo; humanize la estira en desvíos chicos de notas sostenidas | Con 0 ms da el efecto robótico; con humanize se conserva el vibrato natural. |
