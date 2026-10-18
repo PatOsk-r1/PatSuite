@@ -43,6 +43,16 @@ TuneProcessor::TuneProcessor()
     const char* ids[] = {kAuto, kKey, kScale, kSpeed, kHumanize, kFormant, kMix, kGate, kA4};
     for (std::size_t i = 0; i < p_.size(); ++i) p_[i] = state.getRawParameterValue(ids[i]);
     state.state.setProperty("customMask", static_cast<int>(pat::dsp::kDefaultCustomMask), nullptr);
+    presets = std::make_unique<pat::ui::PresetLibrary>(state, "PatTune", factoryPresets());
+    // The drawn custom scale is not a parameter: it travels in user presets as an extra.
+    presets->saveExtras = [this](juce::XmlElement& x) {
+        auto* e = x.createNewChildElement("Extra");
+        e->setAttribute("key", "customMask");
+        e->setAttribute("value", juce::String(static_cast<int>(customMask())));
+    };
+    presets->loadExtra = [this](const juce::String& key, const juce::String& value) {
+        if (key == "customMask") setCustomMask(static_cast<std::uint32_t>(value.getIntValue()));
+    };
 }
 
 void TuneProcessor::setCustomMask(std::uint32_t mask) {

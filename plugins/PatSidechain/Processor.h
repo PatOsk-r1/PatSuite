@@ -5,6 +5,8 @@
 #include "common/core/SpscFifo.h"
 #include "dsp/sidechain/SidechainEngine.h"
 
+#include "common/ui/Presets.h"
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <array>
@@ -49,8 +51,10 @@ public:
     void changeProgramName(int, const juce::String&) override {}
     void getStateInformation(juce::MemoryBlock&) override;
     void setStateInformation(const void*, int) override;
+    static std::vector<pat::ui::FactoryPreset> factoryPresets();
 
     juce::AudioProcessorValueTreeState state;
+    std::unique_ptr<pat::ui::PresetLibrary> presets;  // factory + user presets (Presets.cpp)
     pat::SpscFifo<pat::dsp::GraphPoint> graph{8192};
     std::atomic<float> minGain{1}, triggerDb{-120};
     std::atomic<int> triggers{0};

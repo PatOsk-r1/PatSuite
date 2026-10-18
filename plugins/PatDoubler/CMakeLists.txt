@@ -16,5 +16,6 @@ juce_add_plugin(PatDoubler
 
 target_sources(PatDoubler PRIVATE
     Processor.cpp
+    Presets.cpp
     ${CMAKE_SOURCE_DIR}/ui/doubler/DoublerEditor.cpp)
 pat_plugin_setup(PatDoubler)

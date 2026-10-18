@@ -1,7 +1,7 @@
 // Base editor shared by every PatSuite plugin.
 //
 //   +--------------------------------------------------------------------------+
-//   | (o) PatName  subtitle      [ SIMPLE | PRO ]     [Level: Auto v] [Neon fixed]|
+//   | (o) PatName   [< preset name >][SAVE]   [SIMPLE|PRO] [Level: Auto v] [Neon] |
 //   +--------------------------------------------------------------------------+
 //   |                         content (subclass)                               |
 //   +--------------------------------------------------------------------------+
@@ -17,6 +17,7 @@
 
 #include "common/ui/FrameClock.h"
 #include "common/ui/PerfSettings.h"
+#include "common/ui/Presets.h"
 #include "common/ui/Theme.h"
 
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -38,6 +39,8 @@ public:
 protected:
     // Subclasses call this at the end of their constructor, once their views exist.
     void finishConstruction();
+    // Optional: shows the preset browser in the header (call before finishConstruction()).
+    void setPresets(PresetLibrary& lib);
     // Area below the header, in canvas coordinates; subclasses add their views to content().
     juce::Component& content() noexcept { return content_; }
     virtual void layoutContent(juce::Rectangle<int> area) = 0;
@@ -74,6 +77,8 @@ private:
     juce::ComboBox level_;
     juce::ToggleButton neonFixed_{"NEON FIXED"};
     juce::Label status_;
+    std::unique_ptr<PresetBar> presetBar_;
+    PresetLibrary* presets_ = nullptr;
     FrameClock clock_;
     juce::TooltipWindow tooltips_{this, 600};
     int snapshotCountdown_ = -1;

@@ -5,6 +5,8 @@
 #include "common/core/SpscFifo.h"
 #include "dsp/deesser/DeEsserEngine.h"
 
+#include "common/ui/Presets.h"
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <array>
@@ -50,8 +52,10 @@ public:
     void changeProgramName(int, const juce::String&) override {}
     void getStateInformation(juce::MemoryBlock&) override;
     void setStateInformation(const void*, int) override;
+    static std::vector<pat::ui::FactoryPreset> factoryPresets();
 
     juce::AudioProcessorValueTreeState state;
+    std::unique_ptr<pat::ui::PresetLibrary> presets;  // factory + user presets (Presets.cpp)
     pat::SpscFifo<float> analysis{32768};  // mono input, for the spectrum
     std::atomic<float> detectorDb{-120}, reductionDb{0}, inPeak{0}, outPeak{0};
     std::atomic<double> sampleRate{48000};

@@ -47,6 +47,7 @@ SidechainProcessor::SidechainProcessor()
       state(*this, nullptr, "PARAMS", layout()) {
     const char* ids[] = {kTrigger, kPump, kRate, kThreshold, kAttack, kRelease, kKnee, kRatio, kScLow, kScHigh, kListen, kOutput};
     for (std::size_t i = 0; i < p_.size(); ++i) p_[i] = state.getRawParameterValue(ids[i]);
+    presets = std::make_unique<pat::ui::PresetLibrary>(state, "PatSidechain", factoryPresets());
 }
 
 bool SidechainProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {

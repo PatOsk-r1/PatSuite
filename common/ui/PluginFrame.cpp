@@ -48,6 +48,7 @@ PluginFrame::PluginFrame(juce::AudioProcessor& p, juce::AudioProcessorValueTreeS
 
     clock_.add([this](float) {
         updateStatus();
+        if (presetBar_) presetBar_->refresh();
         if (snapshotCountdown_ > 0 && --snapshotCountdown_ == 0) runSnapshot();
     });
     if (juce::SystemStats::getEnvironmentVariable("PATSUITE_SNAPSHOT", {}).isNotEmpty()) snapshotCountdown_ = 15;
@@ -57,6 +58,12 @@ void PluginFrame::updateStatus() {
     const juce::String s = juce::String(std::string(tierName(settings_->tier()))) + (settings_->neonFixed() ? " | neon fixed" : "") + " | " +
                            juce::String(settings_->frameRate()) + " fps" + (clock_.paused() ? " | paused" : "");
     if (status_.getText() != s) status_.setText(s, juce::dontSendNotification);
+}
+
+void PluginFrame::setPresets(PresetLibrary& lib) {
+    presets_ = &lib;
+    presetBar_ = std::make_unique<PresetBar>(lib, accent_);
+    header_.addAndMakeVisible(*presetBar_);
 }
 
 void PluginFrame::finishConstruction() {
@@ -106,9 +113,18 @@ void PluginFrame::resized() {
     h.removeFromRight(8);
     level_.setBounds(h.removeFromRight(160).reduced(0, 2));
     status_.setBounds(width_ - 14 - 118 - 8 - 160, kHeaderH - 14, 160, 12);  // small line under the level selector
-    const int segW = 92;
-    simple_.setBounds(width_ / 2 - segW, 12, segW, kHeaderH - 24);
-    pro_.setBounds(width_ / 2, 12, segW, kHeaderH - 24);
+    if (presetBar_) {
+        // Preset browser in the middle; SIMPLE | PRO moves next to the level selector.
+        h.removeFromRight(12);
+        pro_.setBounds(h.removeFromRight(60).withY(12).withHeight(kHeaderH - 24));
+        simple_.setBounds(h.removeFromRight(66).withY(12).withHeight(kHeaderH - 24));
+        const int nameEnd = 44 + juce::roundToInt(juce::GlyphArrangement::getStringWidth(font(20.0f, true), name_)) + 22;
+        presetBar_->setBounds(nameEnd, 12, juce::jmax(160, simple_.getX() - 20 - nameEnd), kHeaderH - 24);
+    } else {
+        const int segW = 92;
+        simple_.setBounds(width_ / 2 - segW, 12, segW, kHeaderH - 24);
+        pro_.setBounds(width_ / 2, 12, segW, kHeaderH - 24);
+    }
 
     layoutContent(content_.getLocalBounds());
 }
@@ -129,6 +145,7 @@ void PluginFrame::Header::paint(juce::Graphics& g) {
     g.setFont(font(20.0f, true));
     g.drawText(frame.name_, 44, 0, 200, getHeight(), juce::Justification::centredLeft);
     const int nameW = juce::roundToInt(juce::GlyphArrangement::getStringWidth(font(20.0f, true), frame.name_));
+    if (frame.presetBar_) return;  // the preset browser takes the subtitle's place
     g.setColour(colours::dim);
     g.setFont(font(12.0f));
     g.drawText(frame.subtitle_, 52 + nameW, 0, 220, getHeight(), juce::Justification::centredLeft);
@@ -168,6 +185,12 @@ void PluginFrame::runSnapshot() {
         .replaceWithText("cores=" + juce::String(hw.physicalCores) + "\nmemoryMB=" + juce::String(hw.memoryMB) + "\ngpuMB=" +
                          juce::String(hw.gpuMemoryMB) + "\ngpu=" + settings_->gpuName() + "\ndetected=" +
                          juce::String(std::string(tierName(settings_->detectedTier()))) + "\n");
+    if (presets_) {
+        juce::String txt = "factory=" + juce::String(presets_->numFactory()) + " total=" + juce::String(static_cast<int>(presets_->entries().size())) + "\n";
+        for (const auto& problem : presets_->validate()) txt << "PROBLEM " << problem << "\n";
+        for (const auto& e : presets_->entries()) txt << e.category << "/" << e.name << "\n";
+        dir.getChildFile(name_ + "-presets.txt").replaceWithText(txt);
+    }
     // Back to the user's own settings (the forced ones were never saved).
     settings_->setChoice(oldChoice);
     settings_->setNeonFixed(oldNeon);

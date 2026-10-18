@@ -5,6 +5,8 @@
 #include "common/core/SpscFifo.h"
 #include "dsp/doubler/DoublerEngine.h"
 
+#include "common/ui/Presets.h"
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <array>
@@ -46,11 +48,13 @@ public:
     void changeProgramName(int, const juce::String&) override {}
     void getStateInformation(juce::MemoryBlock&) override;
     void setStateInformation(const void*, int) override;
+    static std::vector<pat::ui::FactoryPreset> factoryPresets();
 
     // Current settings from the parameters (used by the audio thread and the editor).
     pat::dsp::DoublerSettings settings() const noexcept;
 
     juce::AudioProcessorValueTreeState state;
+    std::unique_ptr<pat::ui::PresetLibrary> presets;  // factory + user presets (Presets.cpp)
     pat::SpscFifo<float> wave{16384};                        // mono input, for the wave stack
     pat::SpscFifo<pat::dsp::StereoSample> scope{8192};       // stereo output, for the vectorscope
     std::atomic<double> sampleRate{48000};

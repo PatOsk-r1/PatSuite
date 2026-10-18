@@ -50,6 +50,7 @@ DeEsserProcessor::DeEsserProcessor()
     mode_ = state.getRawParameterValue(kMode);
     listen_ = state.getRawParameterValue(kListen);
     output_ = state.getRawParameterValue(kOutput);
+    presets = std::make_unique<pat::ui::PresetLibrary>(state, "PatDeEsser", factoryPresets());
 }
 
 bool DeEsserProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {

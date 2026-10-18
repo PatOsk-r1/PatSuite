@@ -16,5 +16,6 @@ juce_add_plugin(PatDeEsser
 
 target_sources(PatDeEsser PRIVATE
     Processor.cpp
+    Presets.cpp
     ${CMAKE_SOURCE_DIR}/ui/deesser/DeEsserEditor.cpp)
 pat_plugin_setup(PatDeEsser)

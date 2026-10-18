@@ -55,6 +55,7 @@ DoublerProcessor::DoublerProcessor()
         detune_[static_cast<std::size_t>(c)] = state.getRawParameterValue(detuneId(c));
         pan_[static_cast<std::size_t>(c)] = state.getRawParameterValue(panId(c));
     }
+    presets = std::make_unique<pat::ui::PresetLibrary>(state, "PatDoubler", factoryPresets());
 }
 
 bool DoublerProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {

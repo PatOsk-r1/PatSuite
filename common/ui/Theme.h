@@ -1,5 +1,6 @@
 // PatSuite look: black, neon, elegant. Every plugin shares these colours and fonts; each one picks
-// its own accent (de-esser cyan, sidechain pink, doubler lime, tune violet).
+// its own accent (de-esser cyan, sidechain pink, doubler lime, tune violet, panner gold,
+// delay orange, EQ ice).
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -21,6 +22,8 @@ inline const juce::Colour pink{0xffff2bd6};
 inline const juce::Colour lime{0xff39ff88};
 inline const juce::Colour violet{0xffa060ff};
 inline const juce::Colour gold{0xffffd166};
+inline const juce::Colour orange{0xffff8a3d};
+inline const juce::Colour ice{0xff5cc8ff};
 inline const juce::Colour hot{0xffff4d6d};  // clipping / over threshold
 }  // namespace colours
 

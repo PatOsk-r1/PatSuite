@@ -265,6 +265,7 @@ DeEsserEditor::DeEsserEditor(DeEsserProcessor& p)
     clock().add([this](float dt) {
         if (!simulating_) tick(dt, proc_.detectorDb.load(), proc_.reductionDb.load());
     });
+    setPresets(*p.presets);
     finishConstruction();
 }
 

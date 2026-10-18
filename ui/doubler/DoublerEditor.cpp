@@ -211,6 +211,7 @@ DoublerEditor::DoublerEditor(DoublerProcessor& p)
         waves_->tick(dt);
         if (scope_->isVisible()) scope_->tick();
     });
+    setPresets(*p.presets);
     finishConstruction();
 }
 

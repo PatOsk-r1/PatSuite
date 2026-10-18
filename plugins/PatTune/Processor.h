@@ -6,6 +6,8 @@
 #include "common/core/SpscFifo.h"
 #include "dsp/tune/TuneEngine.h"
 
+#include "common/ui/Presets.h"
+
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <array>
@@ -47,12 +49,14 @@ public:
     void changeProgramName(int, const juce::String&) override {}
     void getStateInformation(juce::MemoryBlock&) override;
     void setStateInformation(const void*, int) override;
+    static std::vector<pat::ui::FactoryPreset> factoryPresets();
 
     // Custom scale: bit i = note i * 50 cents above the key (24 quarter tones).
     std::uint32_t customMask() const noexcept { return customMask_.load(); }
     void setCustomMask(std::uint32_t mask);
 
     juce::AudioProcessorValueTreeState state;
+    std::unique_ptr<pat::ui::PresetLibrary> presets;  // factory + user presets (Presets.cpp)
     pat::SpscFifo<pat::dsp::TunePoint> history{4096};
     std::atomic<float> clarity{0}, detectedHz{0}, targetHz{0}, outputHz{0};
 

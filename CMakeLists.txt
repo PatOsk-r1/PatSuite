@@ -47,6 +47,9 @@ add_library(pat_dsp STATIC
     dsp/tune/PitchDetector.cpp
     dsp/tune/PsolaShifter.cpp
     dsp/tune/TuneEngine.cpp
+    dsp/pan/PanCurve.cpp
+    dsp/pan/PanEngine.cpp
+    dsp/delay/DelayEngine.cpp
 )
 target_link_libraries(pat_dsp PUBLIC pat_core PRIVATE pat_warnings)
 if(MSVC)
@@ -70,6 +73,7 @@ if(PATSUITE_BUILD_PLUGINS)
         ${CMAKE_SOURCE_DIR}/common/ui/SpectrumView.cpp
         ${CMAKE_SOURCE_DIR}/common/ui/PluginFrame.cpp
         ${CMAKE_SOURCE_DIR}/common/ui/SegmentedChoice.cpp
+        ${CMAKE_SOURCE_DIR}/common/ui/Presets.cpp
     )
     if(WIN32)
         target_link_libraries(pat_ui INTERFACE dxgi)  # GPU memory query for the performance level
@@ -85,6 +89,11 @@ if(PATSUITE_BUILD_PLUGINS)
         target_link_libraries(${target}
             PRIVATE pat_core pat_dsp pat_ui pat_warnings juce::juce_audio_utils juce::juce_dsp
             PUBLIC juce::juce_recommended_config_flags juce::juce_recommended_lto_flags)
+        # Presets shared inside the plugin: presets/<Plugin>/**/*.patpreset (tools/collect-presets.ps1).
+        file(GLOB_RECURSE shared CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/presets/${target}/*.patpreset)
+        juce_add_binary_data(${target}PresetData HEADER_NAME PresetData.h NAMESPACE PresetData
+            SOURCES ${CMAKE_SOURCE_DIR}/presets/README.txt ${shared})
+        target_link_libraries(${target} PRIVATE ${target}PresetData)
     endfunction()
 
     add_subdirectory(plugins/PatTemplate)
@@ -92,6 +101,8 @@ if(PATSUITE_BUILD_PLUGINS)
     add_subdirectory(plugins/PatSidechain)
     add_subdirectory(plugins/PatDoubler)
     add_subdirectory(plugins/PatTune)
+    add_subdirectory(plugins/Patan)
+    add_subdirectory(plugins/PatPatPat)
 endif()
 
 # ---------------------------------------------------------------------------------------------
@@ -100,7 +111,7 @@ if(PATSUITE_BUILD_TESTS)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     add_subdirectory(${PAT_THIRD_PARTY}/googletest ${CMAKE_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
-    add_executable(pat_tests tests/CoreTests.cpp tests/DeEsserTests.cpp tests/SidechainTests.cpp tests/DoublerTests.cpp tests/TuneTests.cpp)
+    add_executable(pat_tests tests/CoreTests.cpp tests/DeEsserTests.cpp tests/SidechainTests.cpp tests/DoublerTests.cpp tests/TuneTests.cpp tests/PanTests.cpp tests/DelayTests.cpp)
     target_link_libraries(pat_tests PRIVATE pat_core pat_dsp pat_warnings GTest::gtest_main)
     include(GoogleTest)
     gtest_discover_tests(pat_tests DISCOVERY_MODE PRE_TEST)

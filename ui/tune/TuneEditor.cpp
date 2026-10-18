@@ -309,6 +309,7 @@ TuneEditor::TuneEditor(TuneProcessor& p)
         major_.setToggleState(sc == 1, juce::dontSendNotification);
         minor_.setToggleState(sc == 2, juce::dontSendNotification);
     });
+    setPresets(*p.presets);
     finishConstruction();
 }
 

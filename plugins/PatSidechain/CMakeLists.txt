@@ -16,5 +16,6 @@ juce_add_plugin(PatSidechain
 
 target_sources(PatSidechain PRIVATE
     Processor.cpp
+    Presets.cpp
     ${CMAKE_SOURCE_DIR}/ui/sidechain/SidechainEditor.cpp)
 pat_plugin_setup(PatSidechain)

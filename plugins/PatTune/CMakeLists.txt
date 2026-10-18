@@ -16,5 +16,6 @@ juce_add_plugin(PatTune
 
 target_sources(PatTune PRIVATE
     Processor.cpp
+    Presets.cpp
     ${CMAKE_SOURCE_DIR}/ui/tune/TuneEditor.cpp)
 pat_plugin_setup(PatTune)

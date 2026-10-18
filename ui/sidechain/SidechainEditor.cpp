@@ -194,6 +194,7 @@ SidechainEditor::SidechainEditor(SidechainProcessor& p)
         const int rate = rate_.selected();
         ring_->setLabel(sc ? "KICK" : juce::String(rate == 0 ? "1/4" : rate == 1 ? "1/8" : "1/16"), sc ? "sidechain" : "tempo");
     });
+    setPresets(*p.presets);
     finishConstruction();
 }
 
