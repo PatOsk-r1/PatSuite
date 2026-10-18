@@ -43,6 +43,10 @@ add_library(pat_dsp STATIC
     dsp/deesser/DeEsserEngine.cpp
     dsp/sidechain/SidechainEngine.cpp
     dsp/doubler/DoublerEngine.cpp
+    dsp/tune/Scales.cpp
+    dsp/tune/PitchDetector.cpp
+    dsp/tune/PsolaShifter.cpp
+    dsp/tune/TuneEngine.cpp
 )
 target_link_libraries(pat_dsp PUBLIC pat_core PRIVATE pat_warnings)
 if(MSVC)
@@ -95,7 +99,7 @@ if(PATSUITE_BUILD_TESTS)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     add_subdirectory(${PAT_THIRD_PARTY}/googletest ${CMAKE_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
-    add_executable(pat_tests tests/CoreTests.cpp tests/DeEsserTests.cpp tests/SidechainTests.cpp tests/DoublerTests.cpp)
+    add_executable(pat_tests tests/CoreTests.cpp tests/DeEsserTests.cpp tests/SidechainTests.cpp tests/DoublerTests.cpp tests/TuneTests.cpp)
     target_link_libraries(pat_tests PRIVATE pat_core pat_dsp pat_warnings GTest::gtest_main)
     include(GoogleTest)
     gtest_discover_tests(pat_tests DISCOVERY_MODE PRE_TEST)
