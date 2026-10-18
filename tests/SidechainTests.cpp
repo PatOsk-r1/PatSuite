@@ -154,3 +154,24 @@ TEST(Sidechain, StaysFiniteAndCheap) {
     for (float v : l) ASSERT_TRUE(std::isfinite(v));
     EXPECT_LT(secs, 0.5);
 }
+
+TEST(Sidechain, HoldsTheDuckWithoutFollowingEachKickCycle) {
+    // A long 50 Hz kick: once ducked, the gain must stay steady instead of wobbling with every
+    // cycle of the kick (that wobble is what distorts the bass).
+    SidechainEngine e;
+    e.prepare(kSr);
+    SidechainSettings s;
+    s.trigger = SidechainSettings::Sidechain;
+    s.pump = 1.0f;
+    const int n = static_cast<int>(0.3 * kSr);
+    std::vector<float> sc(static_cast<std::size_t>(n));
+    for (int i = 0; i < n; ++i) sc[static_cast<std::size_t>(i)] = 0.8f * std::sin(2.0f * kPi * 50.0f * static_cast<float>(i) / static_cast<float>(kSr));
+    const auto out = run(e, n, s, &sc);
+    float lo = 1.0f, hi = 0.0f;
+    for (int i = static_cast<int>(0.1 * kSr); i < static_cast<int>(0.25 * kSr); ++i) {
+        lo = std::min(lo, out.l[static_cast<std::size_t>(i)]);
+        hi = std::max(hi, out.l[static_cast<std::size_t>(i)]);
+    }
+    EXPECT_LT(hi, 0.3f);         // ducked
+    EXPECT_LT(hi - lo, 0.02f);   // and steady
+}

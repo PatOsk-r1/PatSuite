@@ -58,6 +58,7 @@ public:
     float triggerDb() const noexcept { return triggerDb_; }    // sidechain envelope level
     int triggers() const noexcept { return triggers_; }        // running count of hits / beats
     bool usingSidechain() const noexcept { return usingSc_; }  // which trigger Auto chose
+    bool sidechainSignal() const noexcept { return scActivity_ > 0.0f; }  // something arrives on the sidechain
 
 private:
     struct Biquad {
@@ -75,7 +76,7 @@ private:
     float sr_ = 48000;
     Biquad hp_, lp_;
     float lastLow_ = -1, lastHigh_ = -1;
-    float env_ = 0, compGain_ = 1;
+    float env_ = 0, grDb_ = 0, compGain_ = 1;  // grDb_: smoothed gain reduction (dB, <= 0)
     bool above_ = false;
     double freeBeats_ = 0, lastBeatPhase_ = 0;
     float scActivity_ = 0;  // seconds of recent sidechain signal (Auto mode)

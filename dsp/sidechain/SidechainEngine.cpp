@@ -33,6 +33,7 @@ void SidechainEngine::reset() noexcept {
     hp_.z1 = hp_.z2 = lp_.z1 = lp_.z2 = 0;
     lastLow_ = lastHigh_ = -1;
     env_ = 0;
+    grDb_ = 0;
     compGain_ = 1;
     above_ = false;
     freeBeats_ = 0;
@@ -53,8 +54,8 @@ float SidechainEngine::compressorGainDb(float levelDb, float thresholdDb, float 
 // Ducking shape after each beat: fast dip (attack), smooth recovery (release, never longer than
 // the beat division so the next hit always starts from full level).
 float SidechainEngine::tempoAmount(double t, const SidechainSettings& s) const noexcept {
-    const double att = std::max(0.0005, s.attackMs * 0.001);
-    if (t < att) return static_cast<float>(t / att);
+    const double att = std::max(0.003, s.attackMs * 0.001);  // at least 3 ms: no click
+    if (t < att) return static_cast<float>(0.5 - 0.5 * std::cos(kPi * t / att));
     const double r = (t - att) / std::max(0.01, s.releaseMs * 0.001);
     if (r >= 1.0) return 0.0f;
     const double v = 1.0 - r;
@@ -73,6 +74,8 @@ int SidechainEngine::process(float* l, float* r, const float* scL, const float* 
     }
     const float att = std::exp(-1.0f / (std::max(0.05f, s.attackMs) * 0.001f * sr_));
     const float rel = std::exp(-1.0f / (std::max(1.0f, s.releaseMs) * 0.001f * sr_));
+    // The gain comes back almost fully (95 %) within the release time.
+    const float relGr = std::exp(-3.0f / (std::max(1.0f, s.releaseMs) * 0.001f * sr_));
     const float outTarget = fromDb(s.outputDb);
     const float outStep = 1.0f - std::exp(-1.0f / (0.02f * sr_));
     const double bpm = t.bpm > 1.0 ? t.bpm : 120.0;
@@ -103,7 +106,11 @@ int SidechainEngine::process(float* l, float* r, const float* scL, const float* 
 
         float gain, trig;
         if (useSc) {
-            compGain_ = fromDb(compressorGainDb(toDb(env_), s.thresholdDb, s.ratio, s.kneeDb));
+            // Like a classic compressor: the gain reduction itself moves with attack and release,
+            // so it does not follow each cycle of the kick (that would distort the bass).
+            const float target = compressorGainDb(toDb(a), s.thresholdDb, s.ratio, s.kneeDb);
+            grDb_ = target < grDb_ ? target + (grDb_ - target) * att : target + (grDb_ - target) * relGr;
+            compGain_ = fromDb(grDb_);
             gain = 1.0f - pump * (1.0f - compGain_);
             trig = std::min(1.0f, env_ * 2.0f);
             // Count a hit when the envelope crosses the threshold upwards (with 3 dB hysteresis).

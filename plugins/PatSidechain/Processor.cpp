@@ -118,6 +118,7 @@ void SidechainProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mi
     triggerDb.store(engine_.triggerDb(), std::memory_order_relaxed);
     triggers.store(engine_.triggers(), std::memory_order_relaxed);
     usingSidechain.store(engine_.usingSidechain(), std::memory_order_relaxed);
+    sidechainSignal.store(engine_.sidechainSignal(), std::memory_order_relaxed);
     for (int c = main.getNumChannels(); c < getTotalNumOutputChannels(); ++c) buffer.clear(c, 0, n);
 }
 

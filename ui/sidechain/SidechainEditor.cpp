@@ -165,7 +165,7 @@ SidechainEditor::SidechainEditor(SidechainProcessor& p)
     ring_ = std::make_unique<PulseRing>(settings());
     for (juce::Component* c : std::initializer_list<juce::Component*>{graph_.get(), ring_.get(), &pump_, &rate_, &trigger_, &threshold_, &attack_,
                                                                        &release_, &knee_, &ratio_, &scLow_, &scHigh_, &output_, &listen_, &rateLabel_,
-                                                                       &triggerLabel_, &hint_})
+                                                                       &triggerLabel_, &hint_, &scStatus_, &help_})
         content().addAndMakeVisible(c);
     listen_.setColour(juce::ToggleButton::tickColourId, kGain);
     listen_.setTooltip("Hear the filtered sidechain signal (what triggers the ducking)");
@@ -175,6 +175,25 @@ SidechainEditor::SidechainEditor(SidechainProcessor& p)
     }
     rateLabel_.setText("RHYTHM", juce::dontSendNotification);
     triggerLabel_.setText("TRIGGER", juce::dontSendNotification);
+    scStatus_.setFont(font(11.0f, true));
+    scStatus_.setJustificationType(juce::Justification::centred);
+    scStatus_.setMinimumHorizontalScale(0.8f);
+    help_.setColour(juce::TextButton::buttonColourId, colours::raised);
+    help_.setTooltip(juce::String::fromUTF8("Cómo mandar el bombo a PatSidechain en FL Studio"));
+    help_.onClick = [this] {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::MessageBoxIconType::InfoIcon, juce::String::fromUTF8("Conectar el bombo (FL Studio)"),
+            juce::String::fromUTF8(
+                "Igual que con el Fruity Limiter, el bombo tiene que llegar al plugin:\n\n"
+                "1. En el mixer, seleccioná la pista del bombo.\n"
+                "2. En la pista donde está PatSidechain, clic derecho en la flechita de ruteo de abajo > "
+                "\"Sidechain to this track\".\n"
+                "3. Abrí las opciones de PatSidechain (el engranaje arriba a la izquierda de la ventana del plugin) > "
+                "pestaña \"Processing\".\n"
+                "4. En las conexiones de entrada, a la entrada 2 (Sidechain) asignale la pista del bombo.\n\n"
+                "Cuando llega, este cartel dice \"BOMBO: llega señal\" y la pista baja con cada golpe. "
+                "PUMP regula cuánto baja; en Pro, THRESHOLD, RATIO, ATTACK y RELEASE funcionan como en el Fruity Limiter."));
+    };
     hint_.setFont(font(12.0f));
     hint_.setJustificationType(juce::Justification::centred);
     hint_.setText("Route your kick to the sidechain input, or just pick a rhythm: PUMP sets how deep it ducks.", juce::dontSendNotification);
@@ -193,6 +212,26 @@ SidechainEditor::SidechainEditor(SidechainProcessor& p)
         const bool sc = proc_.usingSidechain.load();
         const int rate = rate_.selected();
         ring_->setLabel(sc ? "KICK" : juce::String(rate == 0 ? "1/4" : rate == 1 ? "1/8" : "1/16"), sc ? "sidechain" : "tempo");
+        // Is the kick arriving? (the most common problem: the sidechain is not connected in the host)
+        const int trigger = juce::roundToInt(proc_.state.getRawParameterValue(kTrigger)->load());
+        const bool signal = proc_.sidechainSignal.load();
+        juce::String status;
+        juce::Colour col = colours::dim;
+        if (signal) {
+            status = juce::String::fromUTF8("BOMBO: llega señal");
+            col = colours::lime;
+        } else if (trigger == 2) {
+            status = juce::String::fromUTF8("NO LLEGA EL BOMBO");
+            col = colours::hot;
+        } else if (trigger == 0) {
+            status = juce::String::fromUTF8("Sin bombo: bombea a tempo");
+        } else {
+            status = "Modo tempo";
+        }
+        if (scStatus_.getText() != status) {
+            scStatus_.setText(status, juce::dontSendNotification);
+            scStatus_.setColour(juce::Label::textColourId, col);
+        }
     });
     setPresets(*p.presets);
     finishConstruction();
@@ -210,7 +249,10 @@ void SidechainEditor::viewChanged(bool pro) {
 void SidechainEditor::layoutContent(juce::Rectangle<int> area) {
     auto r = area.reduced(16, 12);
     auto top = r.removeFromTop(proView() ? 250 : 290);
-    ring_->setBounds(top.removeFromRight(200));
+    auto ringCol = top.removeFromRight(200);
+    help_.setBounds(ringCol.removeFromBottom(26).withSizeKeepingCentre(150, 24));
+    scStatus_.setBounds(ringCol.removeFromBottom(22));
+    ring_->setBounds(ringCol);
     top.removeFromRight(12);
     graph_->setBounds(top);
     r.removeFromTop(12);

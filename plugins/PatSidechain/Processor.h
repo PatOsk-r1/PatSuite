@@ -58,7 +58,7 @@ public:
     pat::SpscFifo<pat::dsp::GraphPoint> graph{8192};
     std::atomic<float> minGain{1}, triggerDb{-120};
     std::atomic<int> triggers{0};
-    std::atomic<bool> usingSidechain{false}, sidechainConnected{false};
+    std::atomic<bool> usingSidechain{false}, sidechainConnected{false}, sidechainSignal{false};
     std::atomic<double> sampleRate{48000};
 
 private:

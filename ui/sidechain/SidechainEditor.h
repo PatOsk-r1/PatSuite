@@ -36,7 +36,8 @@ private:
     pat::ui::NeonKnob threshold_, attack_, release_, knee_, ratio_, scLow_, scHigh_, output_;
     juce::ToggleButton listen_{"LISTEN SIDECHAIN"};
     juce::AudioProcessorValueTreeState::ButtonAttachment listenAttachment_;
-    juce::Label rateLabel_, triggerLabel_, hint_;
+    juce::Label rateLabel_, triggerLabel_, hint_, scStatus_;
+    juce::TextButton help_{"CONECTAR BOMBO"};
     bool simulating_ = false;
     std::array<pat::dsp::GraphPoint, 2048> buf_{};
     int lastTriggers_ = 0;
