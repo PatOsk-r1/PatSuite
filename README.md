@@ -2,7 +2,8 @@
 
 Free, open-source (AGPL-3.0) suite of visual audio plugins for FL Studio and any VST3 host:
 **PatDeEsser**, **PatChain**, **PatDoubler**, **PatTune**, **Patan** (auto-panner),
-**PatPatPat** (ping-pong delay) and **PatQpro** (pro equalizer), plus the one-click installer that
+**PatPatPat** (ping-pong delay), **PatQpro** (pro equalizer), **PatSquash** (multiband
+upward/downward compressor), **PatMaster** (master limiter + loudness meter), **PatBass** (bass synth), plus the one-click installer that
 also installs **PatWave** and **PatVerb**. Every plugin comes with factory presets and saves yours.
 
 Black-and-neon look, a Simple view for beginners and a Pro view with every control, three visual

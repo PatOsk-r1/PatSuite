@@ -76,6 +76,15 @@ Name: "patpatpat"; Description: "PatPatPat - stereo / ping-pong delay"; Types: f
 #if HasPlugin("PatQpro")
 Name: "patqpro"; Description: "PatQpro - pro equalizer"; Types: full custom
 #endif
+#if HasPlugin("PatSquash")
+Name: "patsquash"; Description: "PatSquash - multiband upward/downward compressor"; Types: full custom
+#endif
+#if HasPlugin("PatMaster")
+Name: "patmaster"; Description: "PatMaster - master limiter + loudness meter"; Types: full custom
+#endif
+#if HasPlugin("PatBass")
+Name: "patbass"; Description: "PatBass - bass synth"; Types: full custom
+#endif
 
 [Files]
 ; Each plugin: the VST3 where every DAW looks, plus its standalone app.
@@ -109,6 +118,15 @@ Name: "patqpro"; Description: "PatQpro - pro equalizer"; Types: full custom
 #if HasPlugin("PatQpro")
 {#Plugin("PatQpro", "patqpro")}
 #endif
+#if HasPlugin("PatSquash")
+{#Plugin("PatSquash", "patsquash")}
+#endif
+#if HasPlugin("PatMaster")
+{#Plugin("PatMaster", "patmaster")}
+#endif
+#if HasPlugin("PatBass")
+{#Plugin("PatBass", "patbass")}
+#endif
 Source: "{#Projects}\PatWave\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Projects}\PatWave\THIRD_PARTY.txt"; DestDir: "{app}"; Flags: ignoreversion
 
@@ -139,6 +157,15 @@ Name: "{autoprograms}\PatSuite\PatPatPat"; Filename: "{app}\PatPatPat.exe"; Comp
 #endif
 #if HasPlugin("PatQpro")
 Name: "{autoprograms}\PatSuite\PatQpro"; Filename: "{app}\PatQpro.exe"; Components: patqpro
+#endif
+#if HasPlugin("PatSquash")
+Name: "{autoprograms}\PatSuite\PatSquash"; Filename: "{app}\PatSquash.exe"; Components: patsquash
+#endif
+#if HasPlugin("PatMaster")
+Name: "{autoprograms}\PatSuite\PatMaster"; Filename: "{app}\PatMaster.exe"; Components: patmaster
+#endif
+#if HasPlugin("PatBass")
+Name: "{autoprograms}\PatSuite\PatBass"; Filename: "{app}\PatBass.exe"; Components: patbass
 #endif
 
 [Messages]

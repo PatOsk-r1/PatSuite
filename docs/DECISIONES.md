@@ -69,3 +69,13 @@
 | El compresor suaviza la **reducción de ganancia** (attack/release sobre los dB de reducción), no la envolvente | Antes la ganancia seguía cada ciclo del bombo y distorsionaba los graves (test `HoldsTheDuckWithoutFollowingEachKickCycle`). El release vuelve al 95 % dentro del tiempo elegido. |
 | Modo tempo con 8 formas (Classic, Smooth, Punchy, Long, Cut, Bounce, Swell, Breathe) y 10 ritmos (1/1 a 1/32, tresillos, 1/8 con puntillo) | Para usarlo sin rutear nada, estilo "una perilla". Toda forma entra en al menos 3 ms (sin clicks, test `EveryShapeDucksAndRecoversWithoutClicks`). |
 | El parámetro de ritmo pasó a llamarse `division` (antes `rate`, con 3 opciones) | Proyectos guardados con la versión anterior vuelven al ritmo por defecto (1/4). |
+
+## PatSquash, PatMaster y PatBass
+
+| Decisión | Por qué |
+|---|---|
+| **PatSquash:** 3 bandas con cruces Linkwitz-Riley (las bandas suman el original), compresión hacia abajo y hacia arriba por banda, DEPTH que mezcla cada banda con su versión sin procesar (sin desfases) | El sonido "OTT" pedido, con nombre y diseño propios. El nivel de cada banda es RMS real (test de curva) y la subida tiene techo de +24 dB y no actúa por debajo de -70 dB, así el ruido no sube. |
+| **PatMaster:** limitador con look-ahead de 1,5 ms (mínimo retenido + filtro de caja del mismo largo), detección de picos entre muestras (4x), release fijo o automático, link estéreo, soft clip | Nunca pasa el techo (test con ruido +12 dB). La latencia (72 + 3 muestras a 48 kHz) se informa a FL. |
+| PatMaster: medidor de sonoridad según ITU-R BS.1770-4 (filtro K, momentáneo, corto plazo, integrado con compuertas, LRA, true peak) y objetivos de plataformas (Spotify -14, Apple -16, Club -8...) con MATCH TARGET | Para dejar el master listo para cada plataforma. Verificado con la referencia: un seno de 1 kHz a -23 dBFS en los dos canales mide -23 LUFS. |
+| **PatBass:** synth solo para bajos: osciladores con morph seno-triángulo-sierra-cuadrada antialiasing (PolyBLEP), FM, unísono, sub limpio, golpe de pitch y click para 808, glide, filtro LP/BP/HP y "vowel" (formantes A-E-I-O-U), LFO sincronizado, distorsión 2x solo arriba del corte "clean", glue | Hecho para todos los géneros. Los graves (y el sub) quedan mono y sin distorsión (test con hard clip). |
+| PatBass: 161 presets por género, con el volumen de cada uno igualado (tabla generada `PresetLevels.inc` desde el diagnóstico) | Pedido del usuario: "muchos presets". Cambiar de preset no hace saltos de volumen. |
