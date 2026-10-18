@@ -1,4 +1,4 @@
-#include "plugins/PatSidechain/Processor.h"
+#include "plugins/PatChain/Processor.h"
 
 #include "ui/sidechain/SidechainEditor.h"
 
@@ -21,7 +21,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout layout() {
     l.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{kTrigger, 1}, "Trigger", juce::StringArray{"Auto", "Tempo", "Sidechain"}, 0));
     l.add(std::make_unique<F>(juce::ParameterID{kPump, 1}, "Pump", juce::NormalisableRange<float>(0.0f, 1.0f), 0.7f,
                               A().withStringFromValueFunction([](float v, int) { return juce::String(juce::roundToInt(v * 100.0f)) + " %"; })));
-    l.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{kRate, 1}, "Rate", juce::StringArray{"1/4", "1/8", "1/16"}, 0));
+    juce::StringArray divisions, shapes;
+    for (int i = 0; i < pat::dsp::SidechainEngine::kNumDivisions; ++i) divisions.add(pat::dsp::SidechainEngine::divisionName(i));
+    for (int i = 0; i < pat::dsp::SidechainEngine::kNumShapes; ++i) shapes.add(pat::dsp::SidechainEngine::shapeName(i));
+    l.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{kRate, 1}, "Rate", divisions, 2));
+    l.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{kShape, 1}, "Shape", shapes, 0));
     l.add(std::make_unique<F>(juce::ParameterID{kThreshold, 1}, "Threshold", juce::NormalisableRange<float>(-60.0f, 0.0f), -24.0f,
                               A().withStringFromValueFunction(db)));
     l.add(std::make_unique<F>(juce::ParameterID{kAttack, 1}, "Attack", skewed(0.1f, 50.0f, 5.0f), 2.0f, A().withStringFromValueFunction(ms)));
@@ -45,9 +49,9 @@ SidechainProcessor::SidechainProcessor()
                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)
                          .withInput("Sidechain", juce::AudioChannelSet::stereo(), true)),
       state(*this, nullptr, "PARAMS", layout()) {
-    const char* ids[] = {kTrigger, kPump, kRate, kThreshold, kAttack, kRelease, kKnee, kRatio, kScLow, kScHigh, kListen, kOutput};
+    const char* ids[] = {kTrigger, kPump, kRate, kThreshold, kAttack, kRelease, kKnee, kRatio, kScLow, kScHigh, kListen, kOutput, kShape};
     for (std::size_t i = 0; i < p_.size(); ++i) p_[i] = state.getRawParameterValue(ids[i]);
-    presets = std::make_unique<pat::ui::PresetLibrary>(state, "PatSidechain", factoryPresets());
+    presets = std::make_unique<pat::ui::PresetLibrary>(state, "PatChain", factoryPresets());
 }
 
 bool SidechainProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const {
@@ -97,6 +101,7 @@ void SidechainProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mi
     s.scHighCutHz = v(9);
     s.listenSidechain = v(10) > 0.5f;
     s.outputDb = v(11);
+    s.shape = juce::roundToInt(v(12));
 
     pat::dsp::Transport t;
     if (auto* ph = getPlayHead())

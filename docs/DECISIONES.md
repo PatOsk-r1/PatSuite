@@ -6,7 +6,7 @@
 |---|---|
 | **Solo VST3** (+ versión suelta para probar sin DAW) | Steinberg dejó de distribuir el kit de VST2 en 2018 y usarlo requiere un acuerdo de licencia. FL Studio maneja VST3 sin problemas. Lo decidió el usuario. |
 | **Gratis y de código abierto (AGPL-3.0)** | Pedido del usuario. Además JUCE es AGPL, así que encaja sin pagar licencia comercial. |
-| **Nombres:** PatDeEsser, PatSidechain, PatDoubler, PatTune | "Pat" + qué hace cada uno. Se evitó "AutoTune", que es marca registrada de Antares. |
+| **Nombres:** PatDeEsser, PatChain, PatDoubler, PatTune | "Pat" + qué hace cada uno. Se evitó "AutoTune", que es marca registrada de Antares. |
 | **Un solo proyecto CMake** para los 4 plugins | Comparten `common/`. Cada plugin es un `juce_add_plugin` en `plugins/<Nombre>`. PatWave y PatVerb siguen como proyectos aparte y el instalador los junta. |
 | `common/core` **sin JUCE** | Se prueba con tests automáticos y se reutiliza en el DSP. |
 | `common/ui` como **lista de archivos fuente compartida** (`INTERFACE`) que se compila dentro de cada plugin | Cada plugin compila su propia copia con sus macros `JucePlugin_*`. Así se evita una librería JUCE compartida con configuraciones distintas. |
@@ -30,8 +30,8 @@
 | **PatDeEsser:** detector pasabanda TPT con ganancia unitaria en el centro; compresor con curva suave de 6 dB | La división por filtro de variables de estado reconstruye la señal exacta (`x = resto + banda`), así que en modo Split la voz no se colorea cuando no hay reducción (test `SplitIsTransparentWhenNotReducing`). |
 | PatDeEsser: **"Smooth"** es una macro de la interfaz que mueve threshold y ratio | Pedido del usuario. Los valores reales se ven y se automatizan en Pro. |
 | PatDeEsser: se agregaron **Release** y **Output** | Aprobado por el usuario. |
-| **PatSidechain:** modos Tempo / Sidechain / Auto. "Pump" es la profundidad en los dos | La vista simple pedida (Pump + 1/4, 1/8, 1/16) necesita un modo a tempo que no depende de rutear el bombo. La vista pro es un compresor sidechain con filtro en la cadena lateral. Auto elige Sidechain mientras entra señal por ese bus. |
-| PatSidechain: el ducking a tempo sigue la posición de la canción (ppq del host) | Así queda en fase con el bombo aunque arranques la reproducción en cualquier lugar. |
+| **PatChain:** modos Tempo / Sidechain / Auto. "Pump" es la profundidad en los dos | La vista simple pedida (Pump + 1/4, 1/8, 1/16) necesita un modo a tempo que no depende de rutear el bombo. La vista pro es un compresor sidechain con filtro en la cadena lateral. Auto elige Sidechain mientras entra señal por ese bus. |
+| PatChain: el ducking a tempo sigue la posición de la canción (ppq del host) | Así queda en fase con el bombo aunque arranques la reproducción en cualquier lugar. |
 | **PatDoubler:** desafinación con desplazador de tono de dos lecturas cruzadas (ventana de 24 ms); variación de tiempo con deriva aleatoria suave | Es liviano y suena limpio para desafinaciones chicas (±50 cents). Contra: agrega 16 ms fijos a cada copia (documentado). |
 | PatDoubler: Width y Thickness son parámetros globales que escalan los valores de cada copia | No hay macros que sincronizar: la vista simple y la pro conviven sin conflicto. |
 | **PatTune, detección:** método McLeod (NSDF por FFT), ventana de unos 43 ms, salto de unos 5 ms, rango de 70 a 1000 Hz | Es preciso con voces (±0,3 % en los tests) y da una "claridad" que se usa directamente como medidor de confianza. |
@@ -59,3 +59,13 @@
 | PatQpro: **detección de choques** entre instancias: cada PatQpro publica su espectro de salida en un "hub" compartido (mismo proceso) | Se elige otra pista (o el sidechain) y se marcan en rojo las frecuencias donde las dos suenan fuerte y parecido. Usa el nombre de la pista de FL cuando el host lo informa. |
 | PatQpro: **EQ Match** aprende unos segundos de la referencia (sidechain u otra pista) y de la pista propia, y ajusta campanas y estantes a la diferencia suavizada (1/3 de octava) | Reemplaza las bandas (se puede deshacer). Cantidad de bandas y porcentaje regulables. |
 | PatQpro: deshacer/rehacer, auto gain por el promedio de la curva, gain scale, pan y polaridad de salida, solo de banda, nota musical en la lectura, teclado de piano opcional | Funciones habituales de un EQ profesional ("que funcione igual"). |
+
+## PatChain (antes PatSidechain)
+
+| Decisión | Por qué |
+|---|---|
+| Nombre **PatChain**; mismo código de plugin (`Psdc`) | Pedido del usuario. |
+| Sidechain por ruteo igual que FabFilter: "Sidechain to this track" + en el plugin, engranaje > Processing > entrada 2 | FL solo conecta el sidechain automáticamente a sus propios plugins (Fruity Limiter). El plugin muestra si llega el bombo y tiene un botón con los pasos. |
+| El compresor suaviza la **reducción de ganancia** (attack/release sobre los dB de reducción), no la envolvente | Antes la ganancia seguía cada ciclo del bombo y distorsionaba los graves (test `HoldsTheDuckWithoutFollowingEachKickCycle`). El release vuelve al 95 % dentro del tiempo elegido. |
+| Modo tempo con 8 formas (Classic, Smooth, Punchy, Long, Cut, Bounce, Swell, Breathe) y 10 ritmos (1/1 a 1/32, tresillos, 1/8 con puntillo) | Para usarlo sin rutear nada, estilo "una perilla". Toda forma entra en al menos 3 ms (sin clicks, test `EveryShapeDucksAndRecoversWithoutClicks`). |
+| El parámetro de ritmo pasó a llamarse `division` (antes `rate`, con 3 opciones) | Proyectos guardados con la versión anterior vuelven al ritmo por defecto (1/4). |

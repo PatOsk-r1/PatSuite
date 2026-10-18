@@ -14,7 +14,7 @@ octava) y cada motor de audio con señales sintéticas.
 | Plugin | Latencia | Cómo se verificó |
 |---|---|---|
 | PatDeEsser | 0 muestras | Test `ZeroLatency`: un impulso sale en la muestra 0. |
-| PatSidechain | 0 muestras | El ducking se aplica en la misma muestra; sin buffers de anticipación. |
+| PatChain | 0 muestras | El ducking se aplica en la misma muestra; sin buffers de anticipación. |
 | PatDoubler | 0 muestras para la señal seca | Test `CopyArrivesAfterItsDelay`. Las copias suenan a propósito a "delay + 16 ms". |
 | PatTune | 1594 muestras (33,2 ms a 48 kHz) | Test `AutoOffIsAPureDelayOfTheReportedLatency`. Se informa al host con `setLatencySamples`, y FL Studio la compensa. |
 | Patan | 0 muestras | El paneo se aplica en la misma muestra. |
@@ -26,7 +26,7 @@ octava) y cada motor de audio con señales sintéticas.
 | Plugin | CPU |
 |---|---|
 | PatDeEsser | 0,2 % |
-| PatSidechain | 0,2 % |
+| PatChain | 0,2 % |
 | PatDoubler | 0,5 % (4 copias, desafinación máxima) |
 | PatTune | 3,0 % (detección + PSOLA + formantes) |
 | Patan | 0,1 % |
@@ -44,7 +44,7 @@ redibujar la ventana entera en cada cuadro, a 20 fps en Bajo y 60 fps en Alto.
 | Plugin | Bajo (ms) | Bajo + neón fijo (ms) | Medio (ms) | Alto (ms) | Alto + neón fijo (ms) | Peor caso Bajo / Alto * |
 |---|---|---|---|---|---|---|
 | PatDeEsser | 4,7 | 4,1 | 4,8 | 6,5 | 4,5 | 9 % / 39 % |
-| PatSidechain | 4,9 | 4,3 | 5,5 | 8,6 | 5,8 | 10 % / 52 % |
+| PatChain | 4,9 | 4,3 | 5,5 | 8,6 | 5,8 | 10 % / 52 % |
 | PatDoubler | 7,2 | 5,6 | 6,8 | 10,3 | 6,2 | 14 % / 62 % |
 | PatTune | 6,9 | 4,7 | 4,7 | 5,3 | 4,5 | 14 % / 32 % |
 | Patan | 5,9 | 5,3 | 5,3 | 7,1 | 5,1 | 12 % / 43 % |
@@ -69,7 +69,7 @@ Con Neón fijo (10 fps) el peor caso queda entre el 4 % y el 6 % de un núcleo p
 ## Presets
 
 En modo diagnóstico cada plugin escribe `<Plugin>-presets.txt` con la lista y los problemas
-(parámetros desconocidos o fuera de rango). Todos sin problemas: PatDeEsser 32, PatSidechain 28,
+(parámetros desconocidos o fuera de rango). Todos sin problemas: PatDeEsser 32, PatChain 28,
 PatDoubler 27, PatTune 33, Patan 38, PatPatPat 44, PatQpro 42. PatWave pasó a 78 presets (niveles
 medidos e igualados) y PatVerb a 61.
 
@@ -77,7 +77,7 @@ medidos e igualados) y PatVerb a 61.
 
 - Uso de CPU real dentro de FL con la ventana abierta y cerrada.
 - Que la pausa de la visual funcione con la ventana minimizada u oculta detrás de FL.
-- Ruteo del sidechain de FL hacia PatSidechain (bus de entrada auxiliar VST3).
+- Ruteo del sidechain de FL hacia PatChain (bus de entrada auxiliar VST3).
 - Calidad de PatTune con voces reales: los tests usan tonos sintéticos tipo vocal.
 - PatQpro: choques y EQ Match entre dos pistas reales; latencia del modo Linear dentro de FL.
 - PatPatPat y Patan sincronizados con el tempo de FL al reproducir y al mover el cursor.

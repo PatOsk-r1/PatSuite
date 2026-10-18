@@ -58,8 +58,8 @@ Name: "patverb"; Description: "PatVerb - visual reverb"; Types: full custom
 #if HasPlugin("PatDeEsser")
 Name: "patdeesser"; Description: "PatDeEsser - de-esser"; Types: full custom
 #endif
-#if HasPlugin("PatSidechain")
-Name: "patsidechain"; Description: "PatSidechain - sidechain / ducking"; Types: full custom
+#if HasPlugin("PatChain")
+Name: "patchain"; Description: "PatChain - sidechain / ducking"; Types: full custom
 #endif
 #if HasPlugin("PatDoubler")
 Name: "patdoubler"; Description: "PatDoubler - vocal doubler"; Types: full custom
@@ -91,8 +91,8 @@ Name: "patqpro"; Description: "PatQpro - pro equalizer"; Types: full custom
 #if HasPlugin("PatDeEsser")
 {#Plugin("PatDeEsser", "patdeesser")}
 #endif
-#if HasPlugin("PatSidechain")
-{#Plugin("PatSidechain", "patsidechain")}
+#if HasPlugin("PatChain")
+{#Plugin("PatChain", "patchain")}
 #endif
 #if HasPlugin("PatDoubler")
 {#Plugin("PatDoubler", "patdoubler")}
@@ -122,8 +122,8 @@ Name: "{autoprograms}\PatSuite\PatVerb"; Filename: "{app}\PatVerb.exe"; Componen
 #if HasPlugin("PatDeEsser")
 Name: "{autoprograms}\PatSuite\PatDeEsser"; Filename: "{app}\PatDeEsser.exe"; Components: patdeesser
 #endif
-#if HasPlugin("PatSidechain")
-Name: "{autoprograms}\PatSuite\PatSidechain"; Filename: "{app}\PatSidechain.exe"; Components: patsidechain
+#if HasPlugin("PatChain")
+Name: "{autoprograms}\PatSuite\PatChain"; Filename: "{app}\PatChain.exe"; Components: patchain
 #endif
 #if HasPlugin("PatDoubler")
 Name: "{autoprograms}\PatSuite\PatDoubler"; Filename: "{app}\PatDoubler.exe"; Components: patdoubler

@@ -103,7 +103,7 @@ if(PATSUITE_BUILD_PLUGINS)
 
     add_subdirectory(plugins/PatTemplate)
     add_subdirectory(plugins/PatDeEsser)
-    add_subdirectory(plugins/PatSidechain)
+    add_subdirectory(plugins/PatChain)
     add_subdirectory(plugins/PatDoubler)
     add_subdirectory(plugins/PatTune)
     add_subdirectory(plugins/Patan)

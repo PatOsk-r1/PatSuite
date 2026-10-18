@@ -1,7 +1,7 @@
 # PatSuite
 
 Free, open-source (AGPL-3.0) suite of visual audio plugins for FL Studio and any VST3 host:
-**PatDeEsser**, **PatSidechain**, **PatDoubler**, **PatTune**, **Patan** (auto-panner),
+**PatDeEsser**, **PatChain**, **PatDoubler**, **PatTune**, **Patan** (auto-panner),
 **PatPatPat** (ping-pong delay) and **PatQpro** (pro equalizer), plus the one-click installer that
 also installs **PatWave** and **PatVerb**. Every plugin comes with factory presets and saves yours.
 

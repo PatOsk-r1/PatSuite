@@ -34,8 +34,12 @@ void SegmentedChoice::resized() {
     auto r = getLocalBounds();
     const int n = static_cast<int>(buttons_.size());
     if (n == 0) return;
-    const int w = r.getWidth() / n;
-    for (auto& b : buttons_) b->setBounds(r.removeFromLeft(w).reduced(2, 0));
+    const int cols = columns_ > 0 ? columns_ : n;
+    const int rows = (n + cols - 1) / cols;
+    const int w = r.getWidth() / cols, h = r.getHeight() / rows;
+    for (int i = 0; i < n; ++i)
+        buttons_[static_cast<std::size_t>(i)]->setBounds(
+            juce::Rectangle<int>(r.getX() + (i % cols) * w, r.getY() + (i / cols) * h, w, h).reduced(2, rows > 1 ? 2 : 0));
 }
 
 }  // namespace pat::ui

@@ -1,16 +1,18 @@
-// Factory presets of PatSidechain. Values in real units; parameters left out keep their default.
-#include "plugins/PatSidechain/Processor.h"
+// Factory presets of PatChain. Values in real units; parameters left out keep their default.
+#include "plugins/PatChain/Processor.h"
 
 using namespace sidechain;
 
 std::vector<pat::ui::FactoryPreset> SidechainProcessor::factoryPresets() {
     const auto u = [](const char* s) { return juce::String::fromUTF8(s); };
-    // trigger (0 auto / 1 tempo / 2 sidechain), pump, rate (0 1/4, 1 1/8, 2 1/16), threshold,
-    // attack, release, knee, ratio, sidechain low cut, sidechain high cut
+    // trigger (0 auto / 1 tempo / 2 sidechain), pump, rate (0 1/4, 1 1/8, 2 1/16; stored +2, see
+    // divisionName), threshold, attack, release, knee, ratio, sidechain low cut, sidechain high cut,
+    // shape (0 Classic, 1 Smooth, 2 Punchy, 3 Long, 4 Cut, 5 Bounce, 6 Swell, 7 Breathe)
     struct P {
         const char* name;
         const char* category;
         float trig, pump, rate, thr, att, rel, knee, ratio, scLow, scHigh;
+        float shape = 0;
     };
     const P list[] = {
         {"Init", "", 0, 0.7f, 0, -24, 2, 180, 6, 8, 20, 150},
@@ -42,11 +44,22 @@ std::vector<pat::ui::FactoryPreset> SidechainProcessor::factoryPresets() {
         {"Pique de Torta Frita", "Producers/Pat Osk", 2, 0.95f, 0, -34, 0.5f, 100, 3, 14, 25, 130},
         {"Ta Pronto, Bo", "Producers/Pat Osk", 1, 0.9f, 2, -24, 1, 50, 6, 8, 20, 150},
         {"Chivito al Pan", "Producers/Pat Osk", 2, 0.8f, 0, -28, 2, 260, 6, 9, 30, 150},
+        // One-knob tempo shapes (no routing needed).
+        {"Smooth Quarter", "Tempo/Shapes", 1, 0.85f, 0, -24, 3, 180, 6, 8, 20, 150, 1},
+        {"Punchy Quarter", "Tempo/Shapes", 1, 0.9f, 0, -24, 3, 180, 6, 8, 20, 150, 2},
+        {"Long Half Note", "Tempo/Shapes", 1, 0.8f, -1, -24, 3, 180, 6, 8, 20, 150, 3},
+        {"Gate Cut Eighths", "Tempo/Shapes", 1, 1.0f, 1, -24, 3, 180, 6, 8, 20, 150, 4},
+        {"Double Bounce", "Tempo/Shapes", 1, 0.85f, 0, -24, 3, 180, 6, 8, 20, 150, 5},
+        {"Reverse Swell", "Tempo/Shapes", 1, 0.9f, 0, -24, 3, 180, 6, 8, 20, 150, 6},
+        {"Breathing Pad", "Tempo/Shapes", 1, 0.7f, 0, -24, 3, 180, 6, 8, 20, 150, 7},
+        {"Trance Gate 1/16", "Tempo/Shapes", 1, 1.0f, 2, -24, 3, 180, 6, 8, 20, 150, 4},
+        {"Mandioca Frita", "Producers/Torbey Beats", 1, 0.95f, 0, -24, 3, 180, 6, 8, 20, 150, 2},
+        {"Respira la Rambla", "Producers/Pat Osk", 1, 0.75f, 0, -24, 3, 180, 6, 8, 20, 150, 7},
     };
     std::vector<pat::ui::FactoryPreset> out;
     for (const auto& p : list)
         out.push_back({u(p.name), u(p.category),
-                       {{kTrigger, p.trig}, {kPump, p.pump}, {kRate, p.rate}, {kThreshold, p.thr}, {kAttack, p.att}, {kRelease, p.rel},
-                        {kKnee, p.knee}, {kRatio, p.ratio}, {kScLow, p.scLow}, {kScHigh, p.scHigh}}});
+                       {{kTrigger, p.trig}, {kPump, p.pump}, {kRate, p.rate + 2}, {kThreshold, p.thr}, {kAttack, p.att}, {kRelease, p.rel},
+                        {kKnee, p.knee}, {kRatio, p.ratio}, {kScLow, p.scLow}, {kScHigh, p.scHigh}, {kShape, p.shape}}});
     return out;
 }

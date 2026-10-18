@@ -27,7 +27,7 @@ foreach ($name in $plugins.Keys) {
     Write-Host "[ok] $name"
 }
 
-# The suite plugins (PatDeEsser, PatSidechain, PatDoubler, PatTune, Patan, PatPatPat, PatQpro) are one
+# The suite plugins (PatDeEsser, PatChain, PatDoubler, PatTune, Patan, PatPatPat, PatQpro) are one
 # CMake project: this folder. Your presets are collected first so they ship inside each plugin.
 if (Test-Path (Join-Path $suite 'plugins\PatDeEsser')) {
     Write-Host '[..] PatSuite plugins'

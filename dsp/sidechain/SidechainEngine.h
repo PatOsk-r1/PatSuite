@@ -1,4 +1,4 @@
-// PatSidechain audio engine. Pure C++, no JUCE, no allocation in process(), zero latency.
+// PatChain audio engine. Pure C++, no JUCE, no allocation in process(), zero latency.
 //
 // Two ways to make the music "pump":
 //   Tempo:     a ducking shape repeats every 1/4, 1/8 or 1/16 note, locked to the song.
@@ -16,7 +16,8 @@ struct SidechainSettings {
     enum Trigger { Auto = 0, Tempo = 1, Sidechain = 2 };
     int trigger = Auto;
     float pump = 0.7f;        // 0..1
-    int rate = 0;             // 0 = 1/4, 1 = 1/8, 2 = 1/16
+    int rate = 2;             // index into the note lengths (see divisionName), default 1/4
+    int shape = 0;            // tempo curve (see shapeName)
     float thresholdDb = -24.0f;
     float attackMs = 2.0f;
     float releaseMs = 180.0f;
@@ -52,7 +53,13 @@ public:
                 GraphPoint* graph, int maxPoints) noexcept;
 
     static float compressorGainDb(float levelDb, float thresholdDb, float ratio, float kneeDb) noexcept;
-    static double divisionBeats(int rate) noexcept { return rate == 2 ? 0.25 : (rate == 1 ? 0.5 : 1.0); }
+    static constexpr int kNumDivisions = 10, kNumShapes = 8;
+    static double divisionBeats(int rate) noexcept;
+    static const char* divisionName(int rate) noexcept;
+    static const char* shapeName(int shape) noexcept;
+    // Ducking amount (0 = full level, 1 = fully ducked) of a tempo curve: `fraction` is the position
+    // inside the note length (0..1), `seconds` the time since the hit.
+    static float shapeAmount(int shape, double fraction, double seconds, double lengthSeconds, const SidechainSettings& s) noexcept;
 
     float minGain() const noexcept { return minGain_; }        // lowest gain of the last block
     float triggerDb() const noexcept { return triggerDb_; }    // sidechain envelope level
@@ -71,7 +78,6 @@ private:
             return y;
         }
     };
-    float tempoAmount(double secondsSinceBeat, const SidechainSettings& s) const noexcept;
 
     float sr_ = 48000;
     Biquad hp_, lp_;

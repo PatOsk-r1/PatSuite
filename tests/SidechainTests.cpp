@@ -1,4 +1,4 @@
-// PatSidechain engine tests.
+// PatChain engine tests.
 #include "dsp/sidechain/SidechainEngine.h"
 
 #include <gtest/gtest.h>
@@ -68,7 +68,7 @@ TEST(Sidechain, RateAndSongPositionAreRespected) {
     SidechainSettings s;
     s.trigger = SidechainSettings::Tempo;
     s.pump = 1.0f;
-    s.rate = 1;  // 1/8 at 120 bpm = every 0.25 s
+    s.rate = 3;  // 1/8 at 120 bpm = every 0.25 s
     Transport t;
     t.playing = true;
     t.ppq = 0.25;  // the song starts a quarter of a beat before an eighth note boundary
@@ -150,7 +150,7 @@ TEST(Sidechain, StaysFiniteAndCheap) {
     const auto t0 = std::chrono::steady_clock::now();
     for (std::size_t i = 0; i < l.size(); i += 256) e.process(l.data() + i, r.data() + i, sc.data() + i, sc.data() + i, 256, s, {}, pts, 8);
     const double secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
-    std::printf("[ bench ] PatSidechain engine: %.3f%% of one core\n", secs / 10.0 * 100.0);
+    std::printf("[ bench ] PatChain engine: %.3f%% of one core\n", secs / 10.0 * 100.0);
     for (float v : l) ASSERT_TRUE(std::isfinite(v));
     EXPECT_LT(secs, 0.5);
 }
@@ -174,4 +174,26 @@ TEST(Sidechain, HoldsTheDuckWithoutFollowingEachKickCycle) {
     }
     EXPECT_LT(hi, 0.3f);         // ducked
     EXPECT_LT(hi - lo, 0.02f);   // and steady
+}
+
+TEST(Sidechain, EveryShapeDucksAndRecoversWithoutClicks) {
+    for (int shape = 0; shape < SidechainEngine::kNumShapes; ++shape) {
+        SidechainEngine e;
+        e.prepare(kSr);
+        SidechainSettings s;
+        s.trigger = SidechainSettings::Tempo;
+        s.shape = shape;
+        s.pump = 1.0f;
+        Transport t;
+        t.playing = true;
+        const auto out = run(e, static_cast<int>(kSr), s, nullptr, t);  // 2 beats at 120 bpm
+        float lo = 1.0f, maxStep = 0.0f;
+        for (std::size_t i = 1; i < out.l.size(); ++i) {
+            lo = std::min(lo, out.l[i]);
+            maxStep = std::max(maxStep, std::abs(out.l[i] - out.l[i - 1]));
+        }
+        EXPECT_LT(lo, 0.2f) << SidechainEngine::shapeName(shape);       // ducks
+        EXPECT_GT(out.l[static_cast<std::size_t>(0.30 * kSr)], 0.6f) << SidechainEngine::shapeName(shape);  // back up within the beat
+        EXPECT_LT(maxStep, 0.02f) << SidechainEngine::shapeName(shape);  // no sample-to-sample jump (click)
+    }
 }

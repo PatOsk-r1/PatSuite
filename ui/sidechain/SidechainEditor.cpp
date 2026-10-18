@@ -147,10 +147,11 @@ private:
 // ------------------------------------------------------------------------------------------- editor
 
 SidechainEditor::SidechainEditor(SidechainProcessor& p)
-    : PluginFrame(p, p.state, "PatSidechain", "pump & ducking", kAccent, 940, 600),
+    : PluginFrame(p, p.state, "PatChain", "pump & ducking", kAccent, 940, 600),
       proc_(p),
       pump_(p.state, kPump, "PUMP", kAccent, settings(), NeonKnob::Size::Big),
-      rate_(p.state, kRate, {"1/4", "1/8", "1/16"}, kAccent),
+      rate_(p.state, kRate, {"1/1", "1/2", "1/4", "1/8", "1/16", "1/32", "1/4 T", "1/8 T", "1/16 T", "1/8 D"}, kAccent),
+      shape_(p.state, kShape, {"CLASSIC", "SMOOTH", "PUNCHY", "LONG", "CUT", "BOUNCE", "SWELL", "BREATHE"}, kAccent),
       trigger_(p.state, kTrigger, {"AUTO", "TEMPO", "SIDECHAIN"}, kGain),
       threshold_(p.state, kThreshold, "THRESHOLD", kAccent, settings()),
       attack_(p.state, kAttack, "ATTACK", kAccent, settings()),
@@ -164,31 +165,34 @@ SidechainEditor::SidechainEditor(SidechainProcessor& p)
     graph_ = std::make_unique<PumpGraph>(settings());
     ring_ = std::make_unique<PulseRing>(settings());
     for (juce::Component* c : std::initializer_list<juce::Component*>{graph_.get(), ring_.get(), &pump_, &rate_, &trigger_, &threshold_, &attack_,
-                                                                       &release_, &knee_, &ratio_, &scLow_, &scHigh_, &output_, &listen_, &rateLabel_,
+                                                                       &release_, &knee_, &ratio_, &scLow_, &scHigh_, &output_, &listen_, &rateLabel_, &shape_, &shapeLabel_,
                                                                        &triggerLabel_, &hint_, &scStatus_, &help_})
         content().addAndMakeVisible(c);
     listen_.setColour(juce::ToggleButton::tickColourId, kGain);
     listen_.setTooltip("Hear the filtered sidechain signal (what triggers the ducking)");
-    for (auto* l : {&rateLabel_, &triggerLabel_, &hint_}) {
+    rate_.setColumns(5);
+    shape_.setColumns(4);
+    for (auto* l : {&rateLabel_, &shapeLabel_, &triggerLabel_, &hint_}) {
         l->setFont(font(11.5f, true));
         l->setColour(juce::Label::textColourId, colours::dim);
     }
     rateLabel_.setText("RHYTHM", juce::dontSendNotification);
+    shapeLabel_.setText("SHAPE (TEMPO)", juce::dontSendNotification);
     triggerLabel_.setText("TRIGGER", juce::dontSendNotification);
     scStatus_.setFont(font(11.0f, true));
     scStatus_.setJustificationType(juce::Justification::centred);
     scStatus_.setMinimumHorizontalScale(0.8f);
     help_.setColour(juce::TextButton::buttonColourId, colours::raised);
-    help_.setTooltip(juce::String::fromUTF8("Cómo mandar el bombo a PatSidechain en FL Studio"));
+    help_.setTooltip(juce::String::fromUTF8("Cómo mandar el bombo a PatChain en FL Studio"));
     help_.onClick = [this] {
         juce::AlertWindow::showMessageBoxAsync(
             juce::MessageBoxIconType::InfoIcon, juce::String::fromUTF8("Conectar el bombo (FL Studio)"),
             juce::String::fromUTF8(
                 "Igual que con el Fruity Limiter, el bombo tiene que llegar al plugin:\n\n"
                 "1. En el mixer, seleccioná la pista del bombo.\n"
-                "2. En la pista donde está PatSidechain, clic derecho en la flechita de ruteo de abajo > "
+                "2. En la pista donde está PatChain, clic derecho en la flechita de ruteo de abajo > "
                 "\"Sidechain to this track\".\n"
-                "3. Abrí las opciones de PatSidechain (el engranaje arriba a la izquierda de la ventana del plugin) > "
+                "3. Abrí las opciones de PatChain (el engranaje arriba a la izquierda de la ventana del plugin) > "
                 "pestaña \"Processing\".\n"
                 "4. En las conexiones de entrada, a la entrada 2 (Sidechain) asignale la pista del bombo.\n\n"
                 "Cuando llega, este cartel dice \"BOMBO: llega señal\" y la pista baja con cada golpe. "
@@ -196,7 +200,7 @@ SidechainEditor::SidechainEditor(SidechainProcessor& p)
     };
     hint_.setFont(font(12.0f));
     hint_.setJustificationType(juce::Justification::centred);
-    hint_.setText("Route your kick to the sidechain input, or just pick a rhythm: PUMP sets how deep it ducks.", juce::dontSendNotification);
+    hint_.setText("Pick a shape and a rhythm (no routing needed), or route your kick. PUMP sets how deep it ducks.", juce::dontSendNotification);
 
     clock().add([this](float dt) {
         if (simulating_) return;
@@ -211,7 +215,7 @@ SidechainEditor::SidechainEditor(SidechainProcessor& p)
         ring_->advance(dt);
         const bool sc = proc_.usingSidechain.load();
         const int rate = rate_.selected();
-        ring_->setLabel(sc ? "KICK" : juce::String(rate == 0 ? "1/4" : rate == 1 ? "1/8" : "1/16"), sc ? "sidechain" : "tempo");
+        ring_->setLabel(sc ? "KICK" : juce::String(pat::dsp::SidechainEngine::divisionName(rate)), sc ? "sidechain" : "tempo");
         // Is the kick arriving? (the most common problem: the sidechain is not connected in the host)
         const int trigger = juce::roundToInt(proc_.state.getRawParameterValue(kTrigger)->load());
         const bool signal = proc_.sidechainSignal.load();
@@ -257,10 +261,13 @@ void SidechainEditor::layoutContent(juce::Rectangle<int> area) {
     graph_->setBounds(top);
     r.removeFromTop(12);
     if (proView()) {
-        auto left = r.removeFromLeft(220);
-        pump_.setBounds(left.removeFromTop(170));
+        auto left = r.removeFromLeft(240);
+        pump_.setBounds(left.removeFromTop(100));
         rateLabel_.setBounds(left.removeFromTop(18));
-        rate_.setBounds(left.removeFromTop(30));
+        rate_.setBounds(left.removeFromTop(56));
+        left.removeFromTop(4);
+        shapeLabel_.setBounds(left.removeFromTop(18));
+        shape_.setBounds(left.removeFromTop(56));
         r.removeFromLeft(16);
         auto row1 = r.removeFromTop(118);
         const int kw = row1.getWidth() / 5;
@@ -277,10 +284,13 @@ void SidechainEditor::layoutContent(juce::Rectangle<int> area) {
         listen_.setBounds(last.withSizeKeepingCentre(last.getWidth() + 40, 24));
     } else {
         hint_.setBounds(r.removeFromBottom(22));
-        auto centre = r.withSizeKeepingCentre(260, r.getHeight());
-        pump_.setBounds(centre.removeFromTop(centre.getHeight() - 56));
-        rateLabel_.setBounds(centre.removeFromTop(18).withSizeKeepingCentre(80, 18));
-        rate_.setBounds(centre.removeFromTop(32));
+        auto leftCol = r.removeFromLeft(320).withSizeKeepingCentre(320, 90);
+        auto rightCol = r.removeFromRight(320).withSizeKeepingCentre(320, 90);
+        shapeLabel_.setBounds(leftCol.removeFromTop(18));
+        shape_.setBounds(leftCol.removeFromTop(64));
+        rateLabel_.setBounds(rightCol.removeFromTop(18));
+        rate_.setBounds(rightCol.removeFromTop(64));
+        pump_.setBounds(r);
     }
 }
 

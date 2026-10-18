@@ -19,7 +19,7 @@
 ## Fases 2 a 6
 
 - Nada se probó todavía dentro de FL Studio (quedan instalados para que los pruebes). Ver `docs/PRUEBAS.md`.
-- PatSidechain: falta comprobar en FL el ruteo del sidechain (en el mixer: "Sidechain to this track")
+- PatChain: falta comprobar en FL el ruteo del sidechain (en el mixer: "Sidechain to this track")
   y que el bus auxiliar quede activo.
 - PatTune: probado con tonos sintéticos. Con voces reales pueden hacer falta ajustes finos del gate y del
   humanize. La calidad de PSOLA baja en pasajes muy rápidos o con mucha respiración.

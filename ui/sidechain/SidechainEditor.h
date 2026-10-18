@@ -1,4 +1,4 @@
-// PatSidechain editor.
+// PatChain editor.
 //   Graph: the kick (trigger) waveform scrolls on top, the gain curve below; a neon ring pulses on
 //          each hit or beat (a steady flash in "Neon fixed").
 //   Simple view: "Pump" knob and rhythm selector (1/4, 1/8, 1/16).
@@ -10,7 +10,7 @@
 #include "common/ui/NeonKnob.h"
 #include "common/ui/PluginFrame.h"
 #include "common/ui/SegmentedChoice.h"
-#include "plugins/PatSidechain/Processor.h"
+#include "plugins/PatChain/Processor.h"
 
 #include <array>
 #include <vector>
@@ -32,11 +32,11 @@ private:
     std::unique_ptr<PumpGraph> graph_;
     std::unique_ptr<PulseRing> ring_;
     pat::ui::NeonKnob pump_;
-    pat::ui::SegmentedChoice rate_, trigger_;
+    pat::ui::SegmentedChoice rate_, shape_, trigger_;
     pat::ui::NeonKnob threshold_, attack_, release_, knee_, ratio_, scLow_, scHigh_, output_;
     juce::ToggleButton listen_{"LISTEN SIDECHAIN"};
     juce::AudioProcessorValueTreeState::ButtonAttachment listenAttachment_;
-    juce::Label rateLabel_, triggerLabel_, hint_, scStatus_;
+    juce::Label rateLabel_, shapeLabel_, triggerLabel_, hint_, scStatus_;
     juce::TextButton help_{"CONECTAR BOMBO"};
     bool simulating_ = false;
     std::array<pat::dsp::GraphPoint, 2048> buf_{};

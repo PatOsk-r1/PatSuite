@@ -1,4 +1,4 @@
-// PatSidechain processor: main stereo bus + sidechain bus -> SidechainEngine. Graph points and
+// PatChain processor: main stereo bus + sidechain bus -> SidechainEngine. Graph points and
 // meters go to the editor through a lock-free FIFO and atomics.
 #pragma once
 
@@ -16,7 +16,8 @@ namespace sidechain {
 // Parameter IDs (stored in host projects: never rename).
 inline constexpr const char* kTrigger = "trigger";  // Auto / Tempo / Sidechain
 inline constexpr const char* kPump = "pump";
-inline constexpr const char* kRate = "rate";  // 1/4, 1/8, 1/16
+inline constexpr const char* kRate = "division";  // note length of the tempo curve (1/1 .. 1/32, triplets, dotted)
+inline constexpr const char* kShape = "shape";     // tempo curve shape
 inline constexpr const char* kThreshold = "threshold";
 inline constexpr const char* kAttack = "attack";
 inline constexpr const char* kRelease = "release";
@@ -40,7 +41,7 @@ public:
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
-    const juce::String getName() const override { return "PatSidechain"; }
+    const juce::String getName() const override { return "PatChain"; }
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return false; }
     double getTailLengthSeconds() const override { return 0.0; }
@@ -63,6 +64,6 @@ public:
 
 private:
     pat::dsp::SidechainEngine engine_;
-    std::array<std::atomic<float>*, 12> p_{};
+    std::array<std::atomic<float>*, 13> p_{};
     std::array<pat::dsp::GraphPoint, 256> points_{};
 };

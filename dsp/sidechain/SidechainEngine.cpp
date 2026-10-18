@@ -51,15 +51,57 @@ float SidechainEngine::compressorGainDb(float levelDb, float thresholdDb, float 
     return -slope * t * t / (2.0f * k);
 }
 
-// Ducking shape after each beat: fast dip (attack), smooth recovery (release, never longer than
-// the beat division so the next hit always starts from full level).
-float SidechainEngine::tempoAmount(double t, const SidechainSettings& s) const noexcept {
-    const double att = std::max(0.003, s.attackMs * 0.001);  // at least 3 ms: no click
-    if (t < att) return static_cast<float>(0.5 - 0.5 * std::cos(kPi * t / att));
-    const double r = (t - att) / std::max(0.01, s.releaseMs * 0.001);
-    if (r >= 1.0) return 0.0f;
-    const double v = 1.0 - r;
-    return static_cast<float>(v * v);
+namespace {
+struct Division {
+    const char* name;
+    double beats;
+};
+constexpr Division kDivisions[SidechainEngine::kNumDivisions] = {
+    {"1/1", 4.0}, {"1/2", 2.0}, {"1/4", 1.0}, {"1/8", 0.5}, {"1/16", 0.25}, {"1/32", 0.125},
+    {"1/4 T", 2.0 / 3.0}, {"1/8 T", 1.0 / 3.0}, {"1/16 T", 1.0 / 6.0}, {"1/8 D", 0.75},
+};
+constexpr const char* kShapes[SidechainEngine::kNumShapes] = {"Classic", "Smooth", "Punchy", "Long", "Cut", "Bounce", "Swell", "Breathe"};
+}  // namespace
+
+double SidechainEngine::divisionBeats(int rate) noexcept { return kDivisions[std::clamp(rate, 0, kNumDivisions - 1)].beats; }
+const char* SidechainEngine::divisionName(int rate) noexcept { return kDivisions[std::clamp(rate, 0, kNumDivisions - 1)].name; }
+const char* SidechainEngine::shapeName(int shape) noexcept { return kShapes[std::clamp(shape, 0, kNumShapes - 1)]; }
+
+// Tempo curves. Every curve that starts fully ducked fades in over at least 3 ms (no click) and is
+// back at full level before the next hit, so each beat starts from the same place.
+float SidechainEngine::shapeAmount(int shape, double f, double t, double length, const SidechainSettings& s) noexcept {
+    const double att = std::max(0.003, s.attackMs * 0.001);
+    const double ramp = t < att ? 0.5 - 0.5 * std::cos(kPi * t / att) : 1.0;
+    f = std::clamp(f, 0.0, 1.0);
+    double v;
+    switch (shape) {
+        case 1:  // Smooth: cosine back up over 70 % of the note
+            v = f < 0.7 ? 0.5 + 0.5 * std::cos(kPi * f / 0.7) : 0.0;
+            break;
+        case 2:  // Punchy: deep and short, fast exponential recovery
+            v = std::exp(-f * 10.0) * (1.0 - f);
+            break;
+        case 3:  // Long: comes back slowly across the whole note
+            v = std::pow(1.0 - f, 1.6);
+            break;
+        case 4:  // Cut: silent, then snaps back (gate)
+            v = f < 0.35 ? 1.0 : (f < 0.42 ? 0.5 + 0.5 * std::cos(kPi * (f - 0.35) / 0.07) : 0.0);
+            break;
+        case 5:  // Bounce: the dip, then a small second one
+            v = std::max(std::exp(-f * 7.0) * (1.0 - f), 0.4 * std::exp(-std::pow((f - 0.5) * 9.0, 2.0)));
+            break;
+        case 6:  // Swell: straight line back up, like a reverse fade
+            v = 1.0 - f;
+            break;
+        case 7:  // Breathe: one smooth wave per note, no hard edge at all
+            return static_cast<float>(0.5 + 0.5 * std::cos(2.0 * kPi * f));
+        default: {  // Classic: attack, then the release time (never longer than the note)
+            const double r = (t - att) / std::max(0.01, std::min(s.releaseMs * 0.001, length));
+            v = t < att ? 1.0 : (r >= 1.0 ? 0.0 : (1.0 - r) * (1.0 - r));
+            break;
+        }
+    }
+    return static_cast<float>(v * ramp);
 }
 
 int SidechainEngine::process(float* l, float* r, const float* scL, const float* scR, int n, const SidechainSettings& s, const Transport& t,
@@ -125,7 +167,7 @@ int SidechainEngine::process(float* l, float* r, const float* scL, const float* 
             const double phase = std::fmod(beats, div);
             if (phase < lastBeatPhase_) ++triggers_;  // wrapped: a new beat started
             lastBeatPhase_ = phase;
-            const float amt = tempoAmount(phase * secPerBeat, s);
+            const float amt = shapeAmount(s.shape, phase / div, phase * secPerBeat, div * secPerBeat, s);
             gain = 1.0f - pump * amt * 0.985f;  // keep a hint of sound at full pump (-36 dB)
             trig = amt;
         }
