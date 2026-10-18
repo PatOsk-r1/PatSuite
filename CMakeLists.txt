@@ -91,6 +91,7 @@ if(PATSUITE_BUILD_PLUGINS)
     add_subdirectory(plugins/PatDeEsser)
     add_subdirectory(plugins/PatSidechain)
     add_subdirectory(plugins/PatDoubler)
+    add_subdirectory(plugins/PatTune)
 endif()
 
 # ---------------------------------------------------------------------------------------------
