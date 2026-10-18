@@ -58,6 +58,7 @@ add_library(pat_dsp STATIC
     dsp/squash/SquashEngine.cpp
     dsp/master/Loudness.cpp
     dsp/master/LimiterEngine.cpp
+    dsp/bass/BassEngine.cpp
 )
 target_link_libraries(pat_dsp PUBLIC pat_core PRIVATE pat_warnings)
 if(MSVC)
@@ -114,6 +115,7 @@ if(PATSUITE_BUILD_PLUGINS)
     add_subdirectory(plugins/PatQpro)
     add_subdirectory(plugins/PatSquash)
     add_subdirectory(plugins/PatMaster)
+    add_subdirectory(plugins/PatBass)
 endif()
 
 # ---------------------------------------------------------------------------------------------
@@ -122,7 +124,7 @@ if(PATSUITE_BUILD_TESTS)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
     add_subdirectory(${PAT_THIRD_PARTY}/googletest ${CMAKE_BINARY_DIR}/googletest EXCLUDE_FROM_ALL)
-    add_executable(pat_tests tests/CoreTests.cpp tests/DeEsserTests.cpp tests/SidechainTests.cpp tests/DoublerTests.cpp tests/TuneTests.cpp tests/PanTests.cpp tests/DelayTests.cpp tests/EqTests.cpp tests/SquashTests.cpp tests/MasterTests.cpp)
+    add_executable(pat_tests tests/CoreTests.cpp tests/DeEsserTests.cpp tests/SidechainTests.cpp tests/DoublerTests.cpp tests/TuneTests.cpp tests/PanTests.cpp tests/DelayTests.cpp tests/EqTests.cpp tests/SquashTests.cpp tests/MasterTests.cpp tests/BassTests.cpp)
     target_link_libraries(pat_tests PRIVATE pat_core pat_dsp pat_warnings GTest::gtest_main)
     include(GoogleTest)
     gtest_discover_tests(pat_tests DISCOVERY_MODE PRE_TEST)
