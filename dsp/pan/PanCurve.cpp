@@ -1,8 +1,8 @@
 #include "dsp/pan/PanCurve.h"
 
 #include <algorithm>
-#include <charconv>
 #include <cmath>
+#include <cstdlib>
 
 namespace pat::dsp {
 
@@ -18,10 +18,43 @@ float bendT(float t, float bend) noexcept {
     return (std::exp(c * t) - 1.0f) / (std::exp(c) - 1.0f);
 }
 
+// Numbers are written and read by hand ("-0.250"), not with std::to_chars / from_chars: the
+// float versions need macOS 13.3, and the result must not depend on the language of the system.
 void appendFloat(std::string& s, float v) {
-    char buf[32];
-    const auto r = std::to_chars(buf, buf + sizeof(buf), std::round(v * 1000.0f) / 1000.0f, std::chars_format::fixed, 3);
-    s.append(buf, r.ptr);
+    long long m = std::llround(static_cast<double>(v) * 1000.0);
+    if (m < 0) {
+        s += '-';
+        m = -m;
+    }
+    s += std::to_string(m / 1000);
+    s += '.';
+    const int frac = static_cast<int>(m % 1000);
+    s += static_cast<char>('0' + frac / 100);
+    s += static_cast<char>('0' + frac / 10 % 10);
+    s += static_cast<char>('0' + frac % 10);
+}
+
+// Reads "-12.345" (sign, digits, optional decimals). Returns where it stopped, nullptr on error.
+const char* readFloat(const char* c, const char* end, float& out) noexcept {
+    bool neg = false;
+    if (c < end && (*c == '-' || *c == '+')) neg = *c++ == '-';
+    double v = 0.0, scale = 1.0;
+    bool digits = false;
+    while (c < end && *c >= '0' && *c <= '9') {
+        v = v * 10.0 + (*c++ - '0');
+        digits = true;
+    }
+    if (c < end && *c == '.') {
+        ++c;
+        while (c < end && *c >= '0' && *c <= '9') {
+            scale *= 0.1;
+            v += (*c++ - '0') * scale;
+            digits = true;
+        }
+    }
+    if (!digits) return nullptr;
+    out = static_cast<float>(neg ? -v : v);
+    return c;
 }
 }  // namespace
 
@@ -144,9 +177,8 @@ bool PanCurve::fromString(const std::string& s) {
     while (c < end) {
         float v[4] = {0, 0, 0, 0};
         for (int k = 0; k < 4; ++k) {
-            const auto r = std::from_chars(c, end, v[k]);
-            if (r.ec != std::errc()) return false;
-            c = r.ptr;
+            c = readFloat(c, end, v[k]);
+            if (c == nullptr) return false;
             if (k < 3) {
                 if (c >= end || *c != ',') return false;
                 ++c;

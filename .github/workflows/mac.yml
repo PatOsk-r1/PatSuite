@@ -47,7 +47,7 @@ jobs:
             cmake -S $p -B $p/build/mac -G Ninja -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
               -D${up}_COPY_VST3=OFF
-            cmake --build $p/build/mac --parallel 3
+            cmake --build $p/build/mac --parallel 3 -- -k 0  # keep going: show every error at once
           done
 
       - name: Tests
