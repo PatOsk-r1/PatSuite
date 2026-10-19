@@ -16,22 +16,46 @@
 #define PluginDir(Name) DirExists(SiblingDir(Name)) ? SiblingDir(Name) : SuiteDir(Name)
 #define HasPlugin(Name) FileExists(PluginDir(Name) + "\VST3\" + Name + ".vst3\Contents\x86_64-win\" + Name + ".vst3")
 
+; Background song: the first .mp3 (or .wav) found in installer\music plays in a loop while the
+; wizard is open. No file there = silent installer.
+#define MusicName ""
+#define MusicHandle FindFirst(SourcePath + "music\*.mp3", 0)
+#if !MusicHandle
+  #define MusicHandle FindFirst(SourcePath + "music\*.wav", 0)
+#endif
+#if MusicHandle
+  #define MusicName FindGetFileName(MusicHandle)
+  #expr FindClose(MusicHandle)
+#endif
+
 [Setup]
 AppId={{B71D4E2A-6C93-4F58-A0E7-2D9C5B3F1A64}
 AppName=PatSuite
 AppVersion={#AppVersion}
-AppPublisher=PatWave
+AppPublisher=Pat Osk
 DefaultDirName={autopf}\PatSuite
 DisableProgramGroupPage=yes
 OutputDir=..\dist
-OutputBaseFilename=PatSuite-{#AppVersion}-Setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+#ifdef PreviewPage
+; Preview build (tools/preview-installer.ps1): opens straight on one page, no admin prompt.
+PrivilegesRequired=lowest
+OutputBaseFilename=PatSuite-preview
+#else
 PrivilegesRequired=admin
-WizardStyle=modern
-LicenseFile={#Projects}\PatWave\LICENSE
+OutputBaseFilename=PatSuite-{#AppVersion}-Setup
+#endif
+; Neon look: art\* comes from tools/make-installer-art.py.
+WizardStyle=modern dark hidebevels
+WizardBackColor=#030a06
+WizardBackImageFile=art\back.png
+WizardImageFile=art\wizard.png
+WizardSmallImageFile=art\small.png
+DisableWelcomePage=no
+LicenseFile=art\license.rtf
 UninstallDisplayName=PatSuite (Pat plugins)
 
 [Languages]
@@ -129,6 +153,9 @@ Name: "patbass"; Description: "PatBass - bass synth"; Types: full custom
 #endif
 Source: "{#Projects}\PatWave\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Projects}\PatWave\THIRD_PARTY.txt"; DestDir: "{app}"; Flags: ignoreversion
+#if MusicName != ""
+Source: "music\{#MusicName}"; Flags: dontcopy
+#endif
 
 [Icons]
 #if HasPlugin("PatWave")
@@ -171,3 +198,78 @@ Name: "{autoprograms}\PatSuite\PatBass"; Filename: "{app}\PatBass.exe"; Componen
 [Messages]
 spanish.FinishedLabel=PatSuite quedó instalado. En FL Studio: Options > Manage plugins > Find installed plugins, y marcá la estrella de cada plugin Pat.
 english.FinishedLabel=PatSuite is installed. Rescan plugins in your DAW to find them.
+spanish.SelectDirBrowseLabel=Acá van solo las versiones standalone (.exe) y el desinstalador. Los plugins VST3 se instalan siempre en C:\Program Files\Common Files\VST3, donde FL Studio y los demás DAW los encuentran solos.
+english.SelectDirBrowseLabel=This folder only holds the standalone apps (.exe) and the uninstaller. The VST3 plugins always go to C:\Program Files\Common Files\VST3, where every DAW finds them.
+
+[Code]
+const
+  Neon = $0014FF39;  { BGR of #39FF14 }
+  Mint = $00B0FFA8;
+
+var
+  MusicOn: Boolean;
+  MusicButton: TNewButton;
+
+function mciSendString(Command: String; Buffer: String; Size: Cardinal; Callback: HWND): Cardinal;
+  external 'mciSendStringW@winmm.dll stdcall';
+
+procedure ToggleMusic(Sender: TObject);
+begin
+  if MusicOn then begin
+    mciSendString('pause patmusic', '', 0, 0);
+    MusicButton.Caption := '♪ OFF';
+  end else begin
+    mciSendString('resume patmusic', '', 0, 0);
+    MusicButton.Caption := '♪ ON';
+  end;
+  MusicOn := not MusicOn;
+end;
+
+procedure StartMusic;
+begin
+#if MusicName != ""
+  ExtractTemporaryFile('{#MusicName}');
+  if mciSendString('open "' + ExpandConstant('{tmp}\{#MusicName}') + '" type mpegvideo alias patmusic', '', 0, 0) <> 0 then
+    Exit;
+  mciSendString('play patmusic repeat', '', 0, 0);
+  MusicOn := True;
+  MusicButton := TNewButton.Create(WizardForm);
+  MusicButton.Parent := WizardForm;
+  MusicButton.Left := WizardForm.ClientWidth - WizardForm.CancelButton.Left - WizardForm.CancelButton.Width;
+  MusicButton.Top := WizardForm.CancelButton.Top;
+  MusicButton.Width := WizardForm.CancelButton.Width;
+  MusicButton.Height := WizardForm.CancelButton.Height;
+  MusicButton.Caption := '♪ ON';
+  MusicButton.OnClick := @ToggleMusic;
+#endif
+end;
+
+procedure Paint(L: TNewStaticText; Colour: TColor; Bold: Boolean);
+begin
+  L.Font.Color := Colour;
+  L.StyleElements := [seClient, seBorder];
+  if Bold then
+    L.Font.Style := [fsBold];
+end;
+
+procedure InitializeWizard;
+begin
+  Paint(WizardForm.WelcomeLabel1, Neon, True);
+  Paint(WizardForm.WelcomeLabel2, Mint, False);
+  Paint(WizardForm.FinishedHeadingLabel, Neon, True);
+  WizardForm.PageNameLabel.Font.Color := Neon;
+  WizardForm.PageDescriptionLabel.Font.Color := Mint;
+  StartMusic;
+end;
+
+procedure DeinitializeSetup;
+begin
+  mciSendString('close patmusic', '', 0, 0);
+end;
+
+#ifdef PreviewPage
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := PageID <> {#PreviewPage};
+end;
+#endif
