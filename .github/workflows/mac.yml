@@ -1,0 +1,73 @@
+# Mac build: compiles every Pat plugin (VST3 + AU + Standalone, Apple Silicon + Intel), runs the
+# unit tests and builds dist/PatSuite-<version>-Mac.dmg (an installer .pkg inside).
+# Run it from the Actions tab ("Run workflow"), or push a tag like v3.1.4 to also publish the .dmg
+# as a GitHub release. PatWave and PatVerb are checked out from their own repositories.
+name: Mac
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-14
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: PatSuite
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/PatWave
+          path: PatWave
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/PatVerb
+          path: PatVerb
+
+      - name: Dependencies (JUCE 9.0.4, GoogleTest 1.17.0, Ninja)
+        run: |
+          brew list ninja >/dev/null 2>&1 || brew install ninja
+          git clone --quiet --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git deps/JUCE
+          curl -sL https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz | tar xz -C deps
+          for p in PatSuite PatWave PatVerb; do
+            mkdir -p $p/third_party
+            cp -R deps/JUCE $p/third_party/JUCE
+            cp -R deps/googletest-1.17.0 $p/third_party/googletest
+          done
+
+      - name: Build
+        run: |
+          for p in PatWave PatVerb PatSuite; do
+            up=$(echo $p | tr '[:lower:]' '[:upper:]')
+            cmake -S $p -B $p/build/mac -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
+              -D${up}_COPY_VST3=OFF
+            cmake --build $p/build/mac --parallel 3
+          done
+
+      - name: Tests
+        run: |
+          for p in PatWave PatVerb PatSuite; do
+            ctest --test-dir $p/build/mac --output-on-failure
+          done
+
+      - name: Package
+        run: |
+          version=$(sed -n 's/^project(PatSuite VERSION \([0-9.]*\).*/\1/p' PatSuite/CMakeLists.txt)
+          bash PatSuite/tools/package-mac.sh "$version"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PatSuite-Mac
+          path: PatSuite/dist/*.dmg
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" PatSuite/dist/*.dmg --repo "${GITHUB_REPOSITORY}" --title "PatSuite ${GITHUB_REF_NAME}" --notes "PatSuite for Mac." || gh release upload "${GITHUB_REF_NAME}" PatSuite/dist/*.dmg --repo "${GITHUB_REPOSITORY}" --clobber
