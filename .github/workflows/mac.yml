@@ -2,8 +2,8 @@
 # unit tests and builds dist/PatSuite-<version>-Mac.dmg (an installer .pkg inside).
 # Run it from the Actions tab ("Run workflow"), or push a tag like v3.1.4 to also publish the .dmg
 # as a GitHub release. PatWave and PatVerb are checked out from their own repositories.
-# Speed: the three projects build at the same time on three Macs, and ccache keeps what was
-# already compiled, so a small change rebuilds in minutes.
+# Speed: each plugin builds on its own Mac (GitHub runs several at once), ccache keeps what was
+# already compiled, and the last job joins them all into the .dmg.
 name: Mac
 
 on:
@@ -15,66 +15,98 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  plugin:
     strategy:
       fail-fast: false
       matrix:
-        project: [PatSuite, PatWave, PatVerb]
+        include:
+          - { project: PatWave, plugin: PatWave }
+          - { project: PatVerb, plugin: PatVerb }
+          - { project: PatSuite, plugin: PatBass }
+          - { project: PatSuite, plugin: PatQpro }
+          - { project: PatSuite, plugin: PatTune }
+          - { project: PatSuite, plugin: PatMaster }
+          - { project: PatSuite, plugin: PatSquash }
+          - { project: PatSuite, plugin: PatDeEsser }
+          - { project: PatSuite, plugin: PatChain }
+          - { project: PatSuite, plugin: PatDoubler }
+          - { project: PatSuite, plugin: Patan }
+          - { project: PatSuite, plugin: PatPatPat }
     runs-on: macos-14
-    timeout-minutes: 180
+    timeout-minutes: 120
+    name: ${{ matrix.plugin }}
     steps:
       - uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/${{ matrix.project }}
           path: ${{ matrix.project }}
-
-      - name: Dependencies (JUCE 9.0.4, GoogleTest 1.17.0, Ninja, ccache)
+      - name: Dependencies (JUCE 9.0.4, Ninja, ccache)
         run: |
           brew list ninja >/dev/null 2>&1 || brew install ninja
           brew list ccache >/dev/null 2>&1 || brew install ccache
-          p=${{ matrix.project }}
-          mkdir -p $p/third_party
-          git clone --quiet --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git $p/third_party/JUCE
-          curl -sL https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz | tar xz -C $p/third_party
-          mv $p/third_party/googletest-1.17.0 $p/third_party/googletest
-
+          mkdir -p ${{ matrix.project }}/third_party
+          git clone --quiet --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git ${{ matrix.project }}/third_party/JUCE
       - uses: actions/cache@v4
         with:
           path: ~/Library/Caches/ccache
-          key: ccache-${{ matrix.project }}-${{ github.run_id }}
-          restore-keys: ccache-${{ matrix.project }}-
-
+          key: ccache-${{ matrix.plugin }}-${{ github.run_id }}
+          restore-keys: ccache-${{ matrix.plugin }}-
       - name: Build
         run: |
           p=${{ matrix.project }}
           up=$(echo $p | tr '[:lower:]' '[:upper:]')
-          ccache --max-size=2G
+          ccache --max-size=1G
           cmake -S $p -B $p/build/mac -G Ninja -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -D${up}_COPY_VST3=OFF
-          cmake --build $p/build/mac --parallel 3 -- -k 0  # keep going: show every error at once
+            -D${up}_COPY_VST3=OFF -D${up}_BUILD_TESTS=OFF
+          cmake --build $p/build/mac --target ${{ matrix.plugin }}_All --parallel 3 -- -k 0
           ccache --show-stats | head -5
-
-      - name: Tests
-        run: ctest --test-dir ${{ matrix.project }}/build/mac --output-on-failure
-
-      # Only the finished bundles move on to packaging (tar keeps permissions and symlinks).
-      - name: Collect plugins
+      # Only the finished bundles move on (tar keeps permissions and symlinks).
+      - name: Collect
         run: |
-          p=${{ matrix.project }}
-          cd $p/build/mac
-          find . -path "*_artefacts/Release/*" \( -name "*.vst3" -o -name "*.component" -o -name "*.app" \) -prune -print \
-            | grep -v PatTemplate | tar czf "$GITHUB_WORKSPACE/$p-mac.tgz" -T -
-
+          cd ${{ matrix.project }}/build/mac
+          find . -path "*${{ matrix.plugin }}_artefacts/Release/*" \( -name "*.vst3" -o -name "*.component" -o -name "*.app" \) -prune -print \
+            | tar czf "$GITHUB_WORKSPACE/${{ matrix.plugin }}.tgz" -T -
       - uses: actions/upload-artifact@v4
         with:
-          name: built-${{ matrix.project }}
-          path: ${{ matrix.project }}-mac.tgz
+          name: built-${{ matrix.plugin }}
+          path: ${{ matrix.plugin }}.tgz
           retention-days: 3
 
+  tests:
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: PatSuite
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/PatWave
+          path: PatWave
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/PatVerb
+          path: PatVerb
+      - name: Unit tests (audio engines, no plugins)
+        run: |
+          brew list ninja >/dev/null 2>&1 || brew install ninja
+          git clone --quiet --depth 1 --branch 9.0.4 https://github.com/juce-framework/JUCE.git deps/JUCE
+          curl -sL https://github.com/google/googletest/archive/refs/tags/v1.17.0.tar.gz | tar xz -C deps
+          for p in PatSuite PatWave PatVerb; do
+            up=$(echo $p | tr '[:lower:]' '[:upper:]')
+            mkdir -p $p/third_party
+            cp -R deps/JUCE $p/third_party/JUCE
+            cp -R deps/googletest-1.17.0 $p/third_party/googletest
+            plug=PLUGINS; [ $p != PatSuite ] && plug=PLUGIN
+            cmake -S $p -B $p/build/tests -G Ninja -DCMAKE_BUILD_TYPE=Release -D${up}_BUILD_${plug}=OFF
+            cmake --build $p/build/tests --parallel 3
+            ctest --test-dir $p/build/tests --output-on-failure
+          done
+
   package:
-    needs: build
+    needs: [plugin, tests]
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
@@ -86,18 +118,18 @@ jobs:
           merge-multiple: true
       - name: Package
         run: |
-          for p in PatSuite PatWave PatVerb; do
-            mkdir -p $p/build/mac
-            tar xzf $p-mac.tgz -C $p/build/mac
+          for t in *.tgz; do
+            name=${t%.tgz}
+            case $name in PatWave|PatVerb) dest=$name ;; *) dest=PatSuite ;; esac
+            mkdir -p $dest/build/mac
+            tar xzf $t -C $dest/build/mac
           done
           version=$(sed -n 's/^project(PatSuite VERSION \([0-9.]*\).*/\1/p' PatSuite/CMakeLists.txt)
           bash PatSuite/tools/package-mac.sh "$version"
-
       - uses: actions/upload-artifact@v4
         with:
           name: PatSuite-Mac
           path: PatSuite/dist/*.dmg
-
       - name: Release
         if: startsWith(github.ref, 'refs/tags/')
         env:
