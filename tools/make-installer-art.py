@@ -85,7 +85,8 @@ def wizard_image():
         d.text(((w - bw) / 2, 40 + i * 92), ch, font=big, fill=NEON + (255,))
     small = font("consolab.ttf", 30)
     s = "S U I T E"
-    d.text(((w - d.textlength(s, font=small)) / 2, 330), s, font=small, fill=MINT + (255,))
+    # Centred in the circle, sitting on the edge of the floor.
+    d.text((w / 2, int(h * 0.62) - 8), s, font=small, fill=MINT + (255,), anchor="mb")
     wave(d, 30, w - 30, 560, 26, NEON + (255,), width=3)
     glow(img, text)
     tag = Image.new("RGBA", img.size, (0, 0, 0, 0))

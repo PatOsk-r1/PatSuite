@@ -208,39 +208,99 @@ const
 
 var
   MusicOn: Boolean;
-  MusicButton: TNewButton;
+  Volume: Integer;
+  VolumeLabel: TNewStaticText;
 
 function mciSendString(Command: String; Buffer: String; Size: Cardinal; Callback: HWND): Cardinal;
   external 'mciSendStringW@winmm.dll stdcall';
 
-procedure ToggleMusic(Sender: TObject);
+procedure ShowVolume;
 begin
-  if MusicOn then begin
-    mciSendString('pause patmusic', '', 0, 0);
-    MusicButton.Caption := '♪ OFF';
-  end else begin
-    mciSendString('resume patmusic', '', 0, 0);
-    MusicButton.Caption := '♪ ON';
-  end;
-  MusicOn := not MusicOn;
+  mciSendString('setaudio patmusic volume to ' + IntToStr(Volume * 10), '', 0, 0);
+  if MusicOn then
+    VolumeLabel.Caption := IntToStr(Volume) + '%'
+  else
+    VolumeLabel.Caption := 'OFF';
 end;
 
+procedure ToggleMusic(Sender: TObject);
+begin
+  if MusicOn then
+    mciSendString('pause patmusic', '', 0, 0)
+  else
+    mciSendString('resume patmusic', '', 0, 0);
+  MusicOn := not MusicOn;
+  ShowVolume;
+end;
+
+procedure VolumeDown(Sender: TObject);
+begin
+  if Volume > 0 then Volume := Volume - 5;
+  ShowVolume;
+end;
+
+procedure VolumeUp(Sender: TObject);
+begin
+  if Volume < 100 then Volume := Volume + 5;
+  ShowVolume;
+end;
+
+function SmallButton(Caption: String; Left: Integer; Click: TNotifyEvent): TNewButton;
+begin
+  Result := TNewButton.Create(WizardForm);
+  Result.Parent := WizardForm;
+  Result.Left := Left;
+  Result.Top := WizardForm.CancelButton.Top;
+  Result.Width := ScaleX(32);
+  Result.Height := WizardForm.CancelButton.Height;
+  Result.Caption := Caption;
+  Result.OnClick := Click;
+end;
+
+{ Windows' MCI player refuses many MP3s that start with an ID3 tag (title, artist, cover):
+  drop the tag from the temporary copy so any song works. }
+procedure StripId3(Path: String);
+var
+  S: AnsiString;
+  N: Integer;
+begin
+  if not LoadStringFromFile(Path, S) then
+    Exit;
+  if (Length(S) > 10) and (Copy(S, 1, 3) = 'ID3') then begin
+    N := (Ord(S[7]) shl 21) or (Ord(S[8]) shl 14) or (Ord(S[9]) shl 7) or Ord(S[10]);
+    if (Ord(S[6]) and $10) <> 0 then
+      N := N + 10;  { footer }
+    SaveStringToFile(Path, Copy(S, 11 + N, Length(S)), False);
+  end;
+end;
+
+{ Song in a loop at 25%; bottom-left: mute, - volume +. }
 procedure StartMusic;
+var
+  X: Integer;
 begin
 #if MusicName != ""
   ExtractTemporaryFile('{#MusicName}');
+  StripId3(ExpandConstant('{tmp}\{#MusicName}'));
   if mciSendString('open "' + ExpandConstant('{tmp}\{#MusicName}') + '" type mpegvideo alias patmusic', '', 0, 0) <> 0 then
     Exit;
-  mciSendString('play patmusic repeat', '', 0, 0);
   MusicOn := True;
-  MusicButton := TNewButton.Create(WizardForm);
-  MusicButton.Parent := WizardForm;
-  MusicButton.Left := WizardForm.ClientWidth - WizardForm.CancelButton.Left - WizardForm.CancelButton.Width;
-  MusicButton.Top := WizardForm.CancelButton.Top;
-  MusicButton.Width := WizardForm.CancelButton.Width;
-  MusicButton.Height := WizardForm.CancelButton.Height;
-  MusicButton.Caption := '♪ ON';
-  MusicButton.OnClick := @ToggleMusic;
+  Volume := 25;
+  X := WizardForm.ClientWidth - WizardForm.CancelButton.Left - WizardForm.CancelButton.Width;
+  SmallButton('♪', X, @ToggleMusic);
+  SmallButton('-', X + ScaleX(38), @VolumeDown);
+  VolumeLabel := TNewStaticText.Create(WizardForm);
+  VolumeLabel.Parent := WizardForm;
+  VolumeLabel.AutoSize := False;
+  VolumeLabel.Alignment := taCenter;
+  VolumeLabel.Left := X + ScaleX(72);
+  VolumeLabel.Width := ScaleX(44);
+  VolumeLabel.Top := WizardForm.CancelButton.Top + (WizardForm.CancelButton.Height - ScaleY(14)) div 2;
+  VolumeLabel.Font.Color := Mint;
+  VolumeLabel.StyleElements := [seClient, seBorder];
+  SmallButton('+', X + ScaleX(118), @VolumeUp);
+  ShowVolume;
+  mciSendString('play patmusic repeat', '', 0, 0);
 #endif
 end;
 
