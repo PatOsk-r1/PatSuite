@@ -205,3 +205,42 @@ TEST(Bass, CpuCost) {
     std::printf("PatBass CPU (1 note, 5 unison x 2 osc, drive, glue): %.2f %% of one core\n", pct);
     EXPECT_LT(pct, 15.0);
 }
+
+// Velocity must still be heard with heavy drive and glue (they used to even it out), in mono and
+// in poly, and a soft note must sound softer than a hard one.
+TEST(Bass, VelocityIsHeardThroughDriveAndGlue) {
+    for (bool mono : {true, false}) {
+        auto peakAt = [mono](float velocity) {
+            BassEngine e;
+            e.prepare(kSr);
+            BassSettings s;
+            s.mono = mono;
+            s.drive = 0.8f;
+            s.glue = 1.0f;
+            s.velocity = 0.5f;
+            e.setSettings(s);
+            e.noteOn(40, velocity);
+            const auto o = render(e, 24000);
+            float p = 0.0f;
+            for (int i = 4800; i < 24000; ++i) p = std::max(p, std::abs(o.l[static_cast<std::size_t>(i)]));
+            return 20.0f * std::log10(p + 1e-9f);
+        };
+        const float full = peakAt(1.0f), fl = peakAt(100.0f / 127.0f), soft = peakAt(0.4f);
+        std::printf("mono %d: vel 127 %.1f dB, vel 100 %.1f dB, vel 51 %.1f dB\n", mono ? 1 : 0, full, fl, soft);
+        EXPECT_GT(full - soft, 6.0f);
+        EXPECT_GT(full - fl, 2.0f);
+    }
+}
+
+TEST(Bass, ZeroVelocityAmountPlaysEveryNoteEqual) {
+    BassEngine e;
+    e.prepare(kSr);
+    BassSettings s;
+    s.velocity = 0.0f;
+    e.setSettings(s);
+    e.noteOn(40, 0.2f);
+    const auto o = render(e, 9600);
+    float p = 0.0f;
+    for (float x : o.l) p = std::max(p, std::abs(x));
+    EXPECT_GT(p, 0.1f);
+}

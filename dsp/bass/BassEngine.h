@@ -118,6 +118,7 @@ private:
     void startVoice(Voice& v, int note, float vel, bool retrigger) noexcept;
     void renderVoice(Voice& v, float* l, float* r, float* sub, int n, const BassSettings& s, const float* lfo) noexcept;
     float distort(float x, int type, float drive) const noexcept;
+    static float velocityGain(float amount, float velocity) noexcept;
 
     double sr_ = 48000.0;
     BassSettings s_;
@@ -129,6 +130,7 @@ private:
     float bend_ = 0;
     double lfoPhase_ = 0;
     float lfoOut_ = 0, lfoHold_ = 0, cutoffNow_ = 1000;
+    float lastVelocity_ = 1.0f, velNow_ = 1.0f, polyLoudest_ = 1.0f;  // velocity, applied after the FX
     uint32_t lfoRand_ = 12345;
     bool retrigLfo_ = false;
     // Buffers (sized in prepare for one chunk).

@@ -1,7 +1,7 @@
 # PatSuite: shared code (common/), audio engines (dsp/), editors (ui/) and one target per plugin
 # (plugins/<Name>/). Every plugin is VST3 + Standalone.
 cmake_minimum_required(VERSION 3.25)
-project(PatSuite VERSION 0.1.0 LANGUAGES C CXX)
+project(PatSuite VERSION 3.1.4 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

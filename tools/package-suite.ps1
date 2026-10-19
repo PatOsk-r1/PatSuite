@@ -2,7 +2,7 @@
 # For each plugin: collects your presets (they ship inside the plugin), builds the release VST3 +
 # standalone, then Inno Setup bundles them all into one installer.
 #   powershell -ExecutionPolicy Bypass -File tools/package-suite.ps1
-param([string]$Version = '0.1.0')
+param([string]$Version = '3.1.4')
 $ErrorActionPreference = 'Stop'
 $suite = Split-Path -Parent $PSScriptRoot
 $projects = Split-Path -Parent $suite

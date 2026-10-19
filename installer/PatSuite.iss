@@ -3,7 +3,7 @@
 ; A plugin is included only if its release build exists, so new plugins join automatically
 ; once they are added to the list below and built.
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "3.1.4"
 #endif
 #ifndef Projects
   #define Projects "..\.."
@@ -55,6 +55,10 @@ WizardBackImageFile=art\back.png
 WizardImageFile=art\wizard.png
 WizardSmallImageFile=art\small.png
 DisableWelcomePage=no
+; Same AppId as every earlier version: running a newer setup updates the plugins in place. If a
+; DAW has them open, Setup asks to close it first.
+CloseApplications=yes
+RestartApplications=no
 LicenseFile=art\license.rtf
 UninstallDisplayName=PatSuite (Pat plugins)
 
@@ -109,6 +113,13 @@ Name: "patmaster"; Description: "PatMaster - master limiter + loudness meter"; T
 #if HasPlugin("PatBass")
 Name: "patbass"; Description: "PatBass - bass synth"; Types: full custom
 #endif
+
+[InstallDelete]
+; PatSidechain was renamed PatChain: remove the old plugin, its app and its FL Studio favourite.
+Type: filesandordirs; Name: "{commoncf64}\VST3\PatSidechain.vst3"
+Type: files; Name: "{app}\PatSidechain.exe"
+Type: files; Name: "{autoprograms}\PatSuite\PatSidechain.lnk"
+Type: files; Name: "{userdocs}\Image-Line\FL Studio\Presets\Plugin database\Effects\PatSuite\PatSidechain.fst"
 
 [Files]
 ; Each plugin: the VST3 where every DAW looks, plus its standalone app.

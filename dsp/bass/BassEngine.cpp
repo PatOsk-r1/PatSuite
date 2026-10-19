@@ -179,7 +179,15 @@ void BassEngine::startVoice(Voice& v, int note, float vel, bool retrigger) noexc
     retrigLfo_ = true;
 }
 
+// Velocity -> gain. Amount 0 = every note equal; 0.5 = 18 dB between the softest and the hardest
+// note (FL's default velocity 100 sounds about 4 dB under full); 1 = 36 dB.
+float BassEngine::velocityGain(float amount, float velocity) noexcept {
+    return std::pow(10.0f, std::clamp(amount, 0.0f, 1.0f) * 36.0f * (std::clamp(velocity, 0.0f, 1.0f) - 1.0f) / 20.0f);
+}
+
 void BassEngine::noteOn(int note, float velocity) noexcept {
+    lastVelocity_ = velocity;  // mono: every new note sets the level, even when it slides
+    if (activeVoices() == 0) velNow_ = polyLoudest_ = velocityGain(s_.velocity, velocity);  // first note: no ramp
     // Note stack for mono mode (last pressed wins).
     for (int i = 0; i < heldCount_; ++i)
         if (heldStack_[static_cast<std::size_t>(i)] == note) {
@@ -280,7 +288,9 @@ void BassEngine::renderVoice(Voice& v, float* l, float* r, float* sub, int n, co
     const float punchDecay = std::exp(-1.0f / (std::max(1.0f, s.punchMs) * 0.001f * sr));
     const float clickDecay = std::exp(-1.0f / (0.0025f * sr));
     const float fmRatio = kFmRatios[std::clamp(s.aFmRatio, 0, kNumFmRatios - 1)];
-    const float vel = 1.0f - s.velocity + s.velocity * v.velocity;
+    // The level of the loudest note is applied after drive and glue (see render), otherwise they
+    // would even it out and velocity would barely be heard. Here only the balance between notes.
+    const float vel = s.mono ? 1.0f : velocityGain(s.velocity, v.velocity) / polyLoudest_;
     const float k1 = 1.414f, kRes = 2.0f - 1.96f * std::clamp(s.reso, 0.0f, 1.0f);
     // Unison: detune ratio and pan of each copy (fixed for the whole chunk).
     double up[kMaxUnison], down[kMaxUnison];
@@ -419,6 +429,7 @@ void BassEngine::render(float* l, float* r, int n, double bpm, double ppq, bool 
     const float glueRatio = 1.0f + s.glue * 5.0f, glueThr = -16.0f, makeup = std::pow(10.0f, s.glue * 6.0f / 20.0f);
     const float gAtt = 1.0f - std::exp(-1.0f / (0.004f * static_cast<float>(sr_))), gRel = 1.0f - std::exp(-1.0f / (0.08f * static_cast<float>(sr_)));
     const float width = std::clamp(s.width, 0.0f, 1.0f) * 2.0f;
+    const float velCoef = 1.0f - std::exp(-1.0f / (0.003f * static_cast<float>(sr_)));
     if (retrigLfo_ && s.lfoRetrig) lfoPhase_ = 0.0;
     retrigLfo_ = false;
     const bool followSong = s.lfoSync && !s.lfoRetrig && playing;
@@ -453,6 +464,11 @@ void BassEngine::render(float* l, float* r, int n, double bpm, double ppq, bool 
         std::fill(bufL_.begin(), bufL_.begin() + m, 0.0f);
         std::fill(bufR_.begin(), bufR_.begin() + m, 0.0f);
         std::fill(bufSub_.begin(), bufSub_.begin() + m, 0.0f);
+        float loudest = 0.0f;
+        for (auto& v : voices_)
+            if (v.amp.stage != Env::Idle) loudest = std::max(loudest, velocityGain(s.velocity, v.velocity));
+        if (loudest > 0.0f) polyLoudest_ = loudest;
+        const float velTarget = s.mono ? velocityGain(s.velocity, lastVelocity_) : polyLoudest_;
         for (auto& v : voices_)
             if (v.amp.stage != Env::Idle) renderVoice(v, bufL_.data(), bufR_.data(), bufSub_.data(), m, s, lfoBuf_.data());
 
@@ -500,8 +516,9 @@ void BassEngine::render(float* l, float* r, int n, double bpm, double ppq, bool 
                 o[0] *= gg;
                 o[1] *= gg;
             }
-            l[off + i] = o[0] * vol;
-            r[off + i] = o[1] * vol;
+            velNow_ += velCoef * (velTarget - velNow_);
+            l[off + i] = o[0] * vol * velNow_;
+            r[off + i] = o[1] * vol * velNow_;
         }
     }
 }
